@@ -5,17 +5,29 @@
       v-model="slide"
       navigation
       infinite
-      :autoplay="autoplay"
       arrows
       transition-prev="slide-right"
       transition-next="slide-left"
       @mouseenter="autoplay = false"
       @mouseleave="autoplay = true"
+      class="carousel-fullwidth"
+      height="56.25vw"
     >
-      <q-carousel-slide :name="1" img-src="/carousel/xo-calor.png" />
-      <q-carousel-slide :name="2" img-src="/carousel/oferta-1.png" />
-      <!--<q-carousel-slide :name="3" img-src="/carousel/genda.png" />-->
-      <q-carousel-slide :name="4" img-src="/carousel/oferta-2.png" />
+      <q-carousel-slide
+        :name="1"
+        class="flex items-center justify-center"
+        img-src="/carousel/xo-calor.png"
+      />
+      <q-carousel-slide
+        :name="2"
+        class="flex items-center justify-center"
+        img-src="/carousel/oferta-1.png"
+      />
+      <q-carousel-slide
+        :name="4"
+        class="flex items-center justify-center"
+        img-src="/carousel/oferta-2.png"
+      />
     </q-carousel>
   </div>
 
@@ -30,12 +42,17 @@
         :columns="columns"
         row-key="name"
         :filter="filter"
-        rows-per-page-options="6"
+        :rows-per-page-options="[6]"
         hide-header
       >
         <template v-slot:item="props">
           <div class="q-pa-xs col-xs-12 col-sm-6 col-md-4 col-lg-2">
-            <q-card flat bordered class="q-pa-sm relative desktop-card">
+            <q-card
+              flat
+              bordered
+              class="q-pa-sm relative desktop-card cursor-pointer"
+              @click="goToProduct(props.row)"
+            >
               <q-img :src="props.row.imagePath" class="img-size" fit="contain" />
               <q-card-section class="card-content">
                 <div>
@@ -63,7 +80,6 @@
                       <span class="text-overline">{{ props.row.discount }}% de desconto</span>
                     </div>
                   </div>
-                  <q-separator inset />
                   <div class="">
                     <p class="text-caption">
                       Ou em até
@@ -84,7 +100,6 @@
                       </span>
                     </div>
                   </div>
-                  <q-separator inset class="" />
                   <div class="">
                     <p class="text-caption">
                       Ou em até
@@ -113,12 +128,17 @@
         :columns="columns"
         row-key="name"
         :filter="filter"
-        rows-per-page-options="6"
+        :rows-per-page-options="[6]"
         hide-header
       >
         <template v-slot:item="props">
           <div class="q-pa-xs col-xs-12 col-sm-6 col-md-4 col-lg-2">
-            <q-card flat bordered class="q-pa-sm relative desktop-card">
+            <q-card
+              flat
+              bordered
+              class="q-pa-sm relative desktop-card cursor-pointer"
+              @click="goToProduct(props.row)"
+            >
               <q-img :src="props.row.imagePath" class="img-size" fit="contain" />
               <q-card-section class="card-content">
                 <div>
@@ -146,7 +166,6 @@
                       <span class="text-overline">{{ props.row.discount }}% de desconto</span>
                     </div>
                   </div>
-                  <q-separator inset />
                   <div class="">
                     <p class="text-caption">
                       Ou em até
@@ -167,7 +186,6 @@
                       </span>
                     </div>
                   </div>
-                  <q-separator inset class="" />
                   <div class="">
                     <p class="text-caption">
                       Ou em até
@@ -190,11 +208,37 @@
 </template>
 
 <style lang="sass" scoped>
+.carousel-fullwidth
+  width: 100%;
+  height: 56.25vw;
+  max-height: 350px; /* diminuído de 600px para 400px */
+
+
+.carousel-fullwidth
+  :deep(.q-carousel__slide)
+    background-size: cover !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+
+
+
+
+.carousel-custom
+  :deep(.q-carousel__slide)
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+
 .desktop-card
-  width: 100%   // ocupar a largura da coluna responsiva
-  max-width: 450px
+  width: 100%
+  max-width: 500px
   height: 92%
   max-height: 600px
+  transition: transform 0.2s ease, box-shadow 0.2s ease
+
+.desktop-card:hover
+  transform: translateY(-4px)
+  box-shadow: 0 8px 16px rgba(0,0,0,0.15)
 
 .card-content
   display: flex
@@ -202,10 +246,10 @@
   height: 100%
 
 .price-container
-  height: 90px  // Altura fixa para o container do preço
+  height: 90px
   display: flex
-  align-items: center  // Centraliza verticalmente
-  justify-content: flex-start  // Alinha à esquerda
+  align-items: center
+  justify-content: flex-start
 
 .price-content
   width: 100%
@@ -224,151 +268,16 @@
   max-height: 200px
 
 :deep(.q-table__title)
-  color: #374151   // vermelho
+  color: #374151
   font-weight: bold
   font-size: 22px
 </style>
 
 <script>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { formatCurrency } from 'src/utils/format'
-
-const columns = [
-  {
-    name: 'image-path',
-    required: true,
-    label: 'Image',
-    align: 'center',
-    field: (row) => row.imagePath,
-    sortable: true,
-  },
-  {
-    name: 'product-name',
-    required: true,
-    label: 'Product Name',
-    align: 'left',
-    field: (row) => row.productName,
-    sortable: true,
-  },
-  {
-    name: 'price',
-    required: true,
-    label: 'Price',
-    align: 'left',
-    field: (row) => row.price,
-    sortable: true,
-  },
-  {
-    name: 'discount',
-    required: true,
-    label: 'Discount',
-    align: 'left',
-    field: (row) => row.discount,
-    sortable: true,
-  },
-  {
-    name: 'quota',
-    required: true,
-    label: 'Quota',
-    align: 'left',
-    field: (row) => row.quota,
-    sortable: true,
-  },
-]
-
-const rows_air_conditioner = [
-  {
-    imagePath: '/products/lg-hi-wall/1.jpg',
-    productName: 'Ar condicionado LG HI Wall Split Dual Inverter 9.000 BTUs',
-    price: 2156.84,
-    discount: 10,
-    quota: 12,
-  },
-  {
-    imagePath: '/products/split-agratto-9000/1.jpg',
-    productName:
-      'Ar condicionado Split Hi Wall Inverter Agratto Liv 9.000 BTU/h Quente e Frio LCST9QF – 220 Volts',
-    price: 1920.0,
-    discount: 10,
-    quota: 12,
-  },
-  {
-    imagePath: '/products/ar-condicionado-split-samsung-9000/1.webp',
-    productName: "Ar-condicionado Split Samsung 9000 BTU's Inverter WindFree AI - AR09DY - 220V",
-    price: 3729.9,
-    discount: null,
-    quota: 12,
-  },
-  {
-    imagePath: '/products/ar-condicionado-split-elgin-9000/1.webp',
-    productName:
-      'Ar Condicionado Split Elgin 9000 BTUs Inverter Eco II Connect - HJFE09C2CC - 220V',
-    price: 1899.9,
-    discount: 13,
-    quota: 10,
-  },
-  {
-    imagePath: '/products/ar-condicionado-split-gree-12000/1.webp',
-    productName: 'Ar Condicionado Split Gree 12000BTUs Auto Inverter 220V Branco CB574N09200',
-    price: 3429.9,
-    discount: null,
-    quota: 12,
-  },
-  {
-    imagePath: '/products/ar-condicionado-split-lg-dual/1.webp',
-    productName:
-      'Ar-Condicionado Split LG DUAL Inverter Compact +AI 9.000 BTU Frio – S3-Q09AAQAL - 220V',
-    price: 2449.9,
-    discount: 13,
-    quota: 12,
-  },
-]
-
-const rows_fan = [
-  {
-    imagePath: '/products/ventilador-arno-de-mesa-e-parede-40cm-6-pas/1.webp',
-    productName: 'Ventilador Arno de Mesa e Parede 40cm 6 Pás X-TREME 6 140W 220V Preto - VE60',
-    price: 299.9,
-    discount: 34,
-    quota: 10,
-  },
-  {
-    imagePath: 'products/ventilador-arno-x-treme-7-mesa-3-velocidades-40cm-preto-220v-ve70/1.webp',
-    productName: 'Ventilador Arno X-treme 7 Mesa 3 Velocidades 40cm Preto 220V - VE70',
-    price: 299.9,
-    discount: 5,
-    quota: 10,
-  },
-  {
-    imagePath: '/products/ventilador-britania-2-em-1-maxx-force-150w-40cm-127v-bvt400/1.webp',
-    productName: 'Ventilador Britânia 2 em 1 Maxx Force 150W 40cm 127V - BVT400',
-    price: 249.9,
-    discount: 20,
-    quota: 10,
-  },
-  {
-    imagePath: '/products/ventilador-de-mesa-3-velocidades-220V/1.webp',
-    productName: 'Ventilador de Mesa 3 Velocidades 220V VSP30W Branco - Mondial',
-    price: 127.9,
-    discount: 13,
-    quota: 10,
-  },
-  {
-    imagePath:
-      '/products/ventilador-de-mesa-cadence-3-velocidades-40cm-140w-preto-220v-vtr410/1.webp',
-    productName: 'Ventilador de Mesa Cadence 3 Velocidades 40cm 140W Preto 220V - VTR410',
-    price: 159.9,
-    discount: null,
-    quota: 10,
-  },
-  {
-    imagePath: '/products/ventilador-de-mesa-mondial-50cm-com-3-velocidades/1.webp',
-    productName: 'Ventilador de Mesa Mondial 50cm com 3 Velocidades 220V VTX-50-8P',
-    price: 219.9,
-    discount: 13,
-    quota: 10,
-  },
-]
+import { rows_air_conditioner, rows_fan, columns } from './products-list'
 
 const truncate = (text, length = 70) => {
   if (!text) return ''
@@ -377,6 +286,14 @@ const truncate = (text, length = 70) => {
 
 export default {
   setup() {
+    const router = useRouter()
+
+    const goToProduct = (product) => {
+      // Salva o produto no localStorage para acessar na página de produto
+      localStorage.setItem('selectedProduct', JSON.stringify(product))
+      router.push(`/product/${product.id}`)
+    }
+
     return {
       slide: ref(1),
       autoplay: ref(true),
@@ -386,6 +303,7 @@ export default {
       rows_fan,
       formatCurrency,
       truncate,
+      goToProduct,
     }
   },
 }

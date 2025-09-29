@@ -1,26 +1,16 @@
 <template>
   <q-layout view="lHh Lpr lFf">
+    <!-- Header -->
     <q-header elevated>
-      <q-page-sticky position="bottom-right" :offset="[18, 18]">
-        <q-btn fab icon="mdi-whatsapp" color="green" />
-      </q-page-sticky>
-      <!--<q-toolbar>
-        <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
-
-        <q-toolbar-title> Quasar App </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
-      </q-toolbar>-->
       <!-- Toolbar mobile -->
-
       <q-toolbar class="items-center bg-blue-6 div-toolbar-mobile no-wrap">
         <div class="row items-center q-gutter-sm full-width justify-between">
-          <!-- Ícone do menu à esquerda -->
+          <!-- Ícone menu -->
           <div class="flex-shrink-0">
             <q-btn flat @click="leftDrawerOpen = !leftDrawerOpen" round dense icon="menu" />
           </div>
 
-          <!-- Input no centro - ocupa o espaço disponível -->
+          <!-- Input central -->
           <div class="col q-px-sm">
             <q-input
               rounded
@@ -36,407 +26,203 @@
             </q-input>
           </div>
 
-          <!-- Ícones à direita -->
+          <!-- Ícones direita -->
           <div class="flex-shrink-0 q-gutter-xs">
             <q-btn flat round dense icon="mdi-basket-outline" aria-label="Carrinho" />
           </div>
         </div>
       </q-toolbar>
-      <!-- Toolbar desktop -->
+
+      <!-- Toolbar Desktop -->
       <q-toolbar class="items-center bg-blue-6 div-toolbar-desktop">
-        <div class="row items-center q-gutter-sm full-width">
-          <div class="row items-center col justify-start">
-            <q-img
-              src="logo/logo-128x128.png"
-              alt="Logo"
-              spinner-color="white"
-              style="height: 75px; max-width: 75px"
-            />
+        <div class="row items-center full-width q-gutter-sm justify-between">
+          <!-- Logo -->
+          <div class="col-auto row items-center justify-start">
+            <router-link :to="{ name: 'indexDefault' }" class="logo-link">
+              <q-img
+                class="q-mb-md"
+                src="logo/logo-estendido-plus.png"
+                fit="contain"
+                alt="Logo"
+                spinner-color="white"
+              />
+            </router-link>
           </div>
-          <!-- Container centralizado -->
-          <div class="row items-center col justify-center">
-            <q-input rounded outlined v-model="search_text" bg-color="blue-grey-1" class="col-12">
-              <!-- largura controlada -->
+
+          <!-- Input central -->
+          <div class="col row items-center justify-center no-wrap">
+            <q-input
+              rounded
+              outlined
+              v-model="search_text"
+              bg-color="blue-grey-1"
+              dense
+              class="central-input"
+            >
               <template v-slot:append>
                 <q-icon name="mdi-magnify" @click="search_text = ''" class="cursor-pointer" />
               </template>
             </q-input>
-          </div>
-          <div class="row">
-            <q-btn flat round dense icon="mdi-account-circle" />
-          </div>
-          <div class="">
-            <p class="q-mt-md">Minha Conta</p>
+            <div class="q-ml-sm">
+              <div v-if="loading == true"><q-spinner /> LOADING...</div>
+
+              <div v-else-if="loading == false && !!user == true">
+                <div class>
+                  <q-btn-dropdown
+                    flat
+                    dense
+                    icon="mdi-account"
+                    :label="'Olá, ' + $auth.user.value.user_metadata.primeiro_nome"
+                  >
+                    <q-list>
+                      <q-item clickable v-close-popup @click="$router.push('/minha-pagina')">
+                        <q-item-section avatar>
+                          <q-avatar
+                            icon="mdi-account-arrow-left-outline"
+                            color="primary"
+                            text-color="white"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label>Minha Conta</q-item-label>
+                        </q-item-section>
+                      </q-item>
+
+                      <q-item clickable v-close-popup @click="handleLogout">
+                        <q-item-section avatar>
+                          <q-avatar icon="mdi-logout" color="red" text-color="white" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label>Sair</q-item-label>
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-btn-dropdown>
+                </div>
+              </div>
+
+              <div v-else>
+                <q-btn flat to="/login" color="white">Entrar</q-btn>
+              </div>
+            </div>
+
+            <!-- Loading state -->
+            <div v-if="loading.value" class="row items-center q-gutter-sm">
+              <q-spinner size="24px" color="white" />
+              <span class="text-white">Carregando...</span>
+            </div>
           </div>
 
-          <!-- Ícones alinhados à direita -->
-          <div class="row items-center col q-mr-md justify-end">
-            <q-btn flat round dense icon="mdi-heart-outline" aria-label="Conta" class="q-mr-sm" />
+          <!-- Usuário + Ícones -->
+          <div class="col-auto row items-center q-gutter-sm justify-end">
+            <!-- Loading -->
+            <!-- Exibe enquanto carrega -->
+
+            <!-- Ícones finais -->
+            <q-btn
+              flat
+              round
+              dense
+              icon="mdi-heart-outline"
+              aria-label="Favoritos"
+              class="q-ml-sm"
+            />
             <q-btn flat round dense icon="mdi-basket-outline" aria-label="Carrinho" />
           </div>
         </div>
       </q-toolbar>
+
+      <!-- Navbar desktop -->
       <q-toolbar class="nav-bar bg-green-5 text-white justify-center menu-desktop">
         <div class="row items-center content q-gutter-md">
           <div class="col">
             <div class="row items-center q-gutter-md">
-              <q-btn flat label="Ofertas" />
-              <q-btn flat label="Ar-Condicionado" />
-              <q-btn flat label="Ventiladores" />
-              <q-btn flat label="Peças" />
-              <q-btn flat label="Acessórios" />
+              <q-btn flat label="Ofertas" to="/ofertas" />
+              <q-btn flat label="Ar-Condicionado" to="/condicionadores" />
+              <q-btn flat label="Ventiladores" to="/ventiladores" />
+              <q-btn flat label="Peças" to="/pecas" />
+              <q-btn flat label="Acessórios" to="/acessorios" />
             </div>
           </div>
         </div>
       </q-toolbar>
     </q-header>
 
+    <!-- Drawer lateral -->
     <q-drawer v-model="leftDrawerOpen" bordered>
       <q-list>
-        <EssentialLink v-for="link in linksList" :key="link.title" v-bind="link" />
+        <EssentialLink />
       </q-list>
     </q-drawer>
 
+    <!-- WhatsApp flutuante -->
+    <q-page-sticky position="bottom-right" :offset="[18, 18]" class="whatsapp-sticky">
+      <q-btn
+        fab
+        icon="mdi-whatsapp"
+        color="green"
+        type="a"
+        href="https://wa.me/5584999894891?text=Ol%C3%A1%2C%20gostaria%20de%20falar%20com%20um%20representante"
+        target="_blank"
+      />
+    </q-page-sticky>
+
+    <!-- Conteúdo principal -->
     <q-page-container>
-      <router-view />
+      <router-view :key="$route.fullPath" />
     </q-page-container>
-    <!-- rodapé desktop -->
-    <div class="bg-blue-6 div-footer-desktop">
-      <div class="row q-pa-md">
-        <!-- Logo -->
-        <div class="col-2 q-my-xl q-mx-lg">
-          <q-img class="footer-logo" src="/logo/logo-footer.png" />
-        </div>
 
-        <!-- Formas de pagamento -->
-        <div class="col-2">
-          <p class="text-white text-bold text-body1">
-            <q-icon name="mdi-credit-card-outline" size="md" /> Formas de pagamento
-          </p>
-          <div>
-            <img
-              src="/utils/flags/pix-banco-central-brasil-seeklogo.svg"
-              alt="Pix"
-              style="height: 32px"
-            />
-          </div>
-
-          <div class="row items-center q-gutter-x-sm no-wrap">
-            <img
-              src="/utils/flags/visa-svgrepo-com.svg"
-              alt="Visa"
-              class="q-icon"
-              style="width: 32px; height: 32px"
-            />
-            <img
-              src="/utils/flags/hipercard-3-svgrepo-com.svg"
-              alt="Hipercard"
-              class="q-icon"
-              style="width: 32px; height: 32px"
-            />
-            <img
-              src="/utils/flags/amex-svgrepo-com.svg"
-              alt="American Express"
-              class="q-icon"
-              style="width: 32px; height: 32px"
-            />
-          </div>
-          <div class="row items-center q-gutter-x-sm no-wrap">
-            <img
-              src="/utils/flags/hiper-svgrepo-com.svg"
-              alt="Hiper"
-              class="q-icon"
-              style="width: 32px; height: 32px"
-            />
-            <img
-              src="/utils/flags/mastercard-full-svgrepo-com.svg"
-              alt="MasterCard"
-              class="q-icon"
-              style="width: 32px; height: 32px"
-            />
-            <img
-              src="/utils/flags/elo-3-svgrepo-com.svg"
-              alt="Elo"
-              class="q-icon"
-              style="width: 32px; height: 32px"
-            />
-          </div>
-          <div>
-            <img
-              src="/utils/flags/infinitepay-seeklogo.svg"
-              alt="InfinitePay"
-              class="q-icon"
-              style="height: 64px; width: 128px"
-            />
-          </div>
-        </div>
-        <!-- Lojas físicas -->
-        <div class="col-4">
-          <p class="text-white text-bold text-body1">
-            <q-icon name="mdi-store" size="md" /> Lojas físicas
-          </p>
-          <ul>
-            <li><p class="text-white text-body1">Rua José Roque 44, Parelhas-RN 59360-000</p></li>
-            <li>
-              <p class="text-white text-body1">Rua Dr. Medeiros, Jardim do Sérido-RN 59343-000</p>
-            </li>
-            <li>
-              <p class="text-white text-body1">
-                Rua Tonheca Dantas, Carnaúba dos Dantas-RN 59374-000
-              </p>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Redes sociais -->
-        <div class="col-3">
-          <p class="text-white text-bold text-body1">
-            <q-icon name="mdi-share-variant-outline" size="md" /> Redes sociais
-          </p>
-          <p class="text-white text-body2">
-            <a
-              target="_blank"
-              class="links"
-              href="https://www.instagram.com/m_refrigeracaoparelhas"
-            >
-              <q-icon name="mdi-instagram" size="md" color="white" />
-              <span class="q-ml-sm">@m_refrigeracaoparelhas</span>
-            </a>
-          </p>
-        </div>
-      </div>
-      <q-separator inset />
-      <div class="flex flex-center q-pa-md text-white">
-        © 2025 M Refrigeração – CNPJ 20.528.877/0001-67 | Comércio de refrigeração com qualidade e
-        confiança.
-      </div>
-    </div>
-    <!-- rodapé mobile -->
-
-    <div class="bg-blue-6 div-footer-mobile text-white">
-      <div class="" style="max-width: 85%; margin: auto">
-        <q-list>
-          <q-expansion-item
-            expand-icon-toggle
-            expand-separator
-            icon="mdi-credit-card-outline"
-            label="Formas de pagamento"
-            default-opened
-          >
-            <q-card>
-              <q-card-section class="bg-blue-6">
-                <div>
-                  <img
-                    src="/utils/flags/pix-banco-central-brasil-seeklogo.svg"
-                    alt="Pix"
-                    style="height: 32px"
-                  />
-                  <img
-                    class="q-pl-sm"
-                    src="/utils/flags/infinitepay-seeklogo.svg"
-                    alt="InfinitePay"
-                    style="height: 32px; width: 64px"
-                  />
-                </div>
-
-                <div class="row items-center q-gutter-x-sm no-wrap">
-                  <img
-                    src="/utils/flags/visa-svgrepo-com.svg"
-                    alt="Visa"
-                    class="q-icon"
-                    style="width: 32px; height: 32px"
-                  />
-                  <img
-                    src="/utils/flags/hipercard-3-svgrepo-com.svg"
-                    alt="Hipercard"
-                    class="q-icon"
-                    style="width: 32px; height: 32px"
-                  />
-                  <img
-                    src="/utils/flags/amex-svgrepo-com.svg"
-                    alt="American Express"
-                    class="q-icon"
-                    style="width: 32px; height: 32px"
-                  />
-                  <img
-                    src="/utils/flags/hiper-svgrepo-com.svg"
-                    alt="Hiper"
-                    class="q-icon"
-                    style="width: 32px; height: 32px"
-                  />
-                  <img
-                    src="/utils/flags/mastercard-full-svgrepo-com.svg"
-                    alt="MasterCard"
-                    class="q-icon"
-                    style="width: 32px; height: 32px"
-                  />
-                  <img
-                    src="/utils/flags/elo-3-svgrepo-com.svg"
-                    alt="Elo"
-                    class="q-icon"
-                    style="width: 32px; height: 32px"
-                  />
-                </div>
-              </q-card-section>
-            </q-card>
-          </q-expansion-item>
-          <q-expansion-item
-            expand-icon-toggle
-            expand-separator
-            icon="mdi-store"
-            label="Lojas físicas"
-          >
-            <q-card>
-              <q-card-section class="bg-blue-6">
-                <ul>
-                  <li>
-                    <p class="text-white text-body2">Rua José Roque 44, Parelhas-RN 59360-000</p>
-                  </li>
-                  <li>
-                    <p class="text-white text-body2">
-                      Rua Dr. Medeiros, Jardim do Sérido-RN 59343-000
-                    </p>
-                  </li>
-                  <li>
-                    <p class="text-white text-body2">
-                      Rua Tonheca Dantas, Carnaúba dos Dantas-RN 59374-000
-                    </p>
-                  </li>
-                </ul>
-              </q-card-section>
-            </q-card>
-          </q-expansion-item>
-
-          <q-expansion-item
-            expand-icon-toggle
-            expand-separator
-            icon="mdi-share-variant-outline"
-            label="Redes Sociais"
-          >
-            <q-card>
-              <q-card-section class="bg-blue-6">
-                <p class="text-white q-ml-xl text-body2">
-                  <a
-                    target="_blank"
-                    class="links"
-                    href="https://www.instagram.com/m_refrigeracaoparelhas"
-                  >
-                    <q-icon name="mdi-instagram" size="sm" color="white" />
-                    <span class="q-ml-sm">@m_refrigeracaoparelhas</span>
-                  </a>
-                </p>
-              </q-card-section>
-            </q-card>
-          </q-expansion-item>
-        </q-list>
-      </div>
-      <q-separator inset />
-
-      <div class="flex flex-center q-pa-sm text-white">
-        <p class="justify-center">
-          © 2025 M Refrigeração – CNPJ 20.528.877/0001-67 | Comércio de refrigeração com qualidade
-          e confiança.
-        </p>
-      </div>
-    </div>
+    <!-- Rodapé -->
+    <FooterComponent />
   </q-layout>
 </template>
+
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import EssentialLink from 'components/EssentialLink.vue'
+import useAuthUser from 'src/composables/UseAuthUser'
+import FooterComponent from 'components/FooterComponent.vue'
+import { positiveNotify, negativeNotify } from 'src/composables/UseNotify'
+
+const { user, loading, logout } = useAuthUser()
+const router = useRouter()
+
+const handleLogout = async () => {
+  try {
+    await logout()
+    positiveNotify('Sessão encerrada com sucesso!')
+    router.go(0)
+  } catch (error) {
+    negativeNotify(error.message)
+  }
+}
+
+const search_text = ref('')
+const leftDrawerOpen = ref(false)
+</script>
+
 <style lang="sass" scoped>
-// Estilos gerais
-.footer-logo
+.whatsapp-sticky
+  z-index: 1 !important;
+
+.logo-link
+  height: 96px
+  width: 256px
+  text-decoration: none;
+  display: inline-block;
+
+.central-input
   max-width: 450px
-
-
-.links
-  text-decoration: none
-
-
-ul
-  list-style-type: none
-
-
-@media (min-width: 1024px)
-  .div-footer-desktop
-    display: block;
-
-
-  .div-footer-mobile
-    display: none;
-
-
-
+  width: 100%
 
 @media (max-width: $breakpoint-sm-max)
-  .div-footer-desktop
+  .div-toolbar-desktop
     display: none
-
-
-  .div-footer-mobile
-    display: block
+  .menu-desktop
+    display: none
 
 @media (min-width: $breakpoint-md-min)
   .div-toolbar-mobile
     display: none
-
-
-
-@media (max-width: $breakpoint-sm-max)
-  .menu-desktop
-    display: none
-
-
-  .div-toolbar-desktop
-    display: none
 </style>
-
-<script setup>
-import { ref } from 'vue'
-import EssentialLink from 'components/EssentialLink.vue'
-
-const linksList = [
-  {
-    title: 'Login',
-    caption: '',
-    icon: 'mdi-account',
-    link: 'https://quasar.dev',
-  },
-  {
-    title: 'Ofertas',
-    caption: '',
-    icon: 'mdi-offer',
-    link: 'https://github.com/quasarframework',
-  },
-  {
-    title: 'Condicionadores de ar',
-    caption: '',
-    icon: 'mdi-snowflake',
-    link: 'https://chat.quasar.dev',
-  },
-  {
-    title: 'Ventiladores',
-    caption: '',
-    icon: 'mdi-fan',
-    link: 'https://forum.quasar.dev',
-  },
-  {
-    title: 'Peças',
-    caption: '',
-    icon: 'mdi-cog',
-    link: 'https://twitter.quasar.dev',
-  },
-  {
-    title: 'Acessórios',
-    caption: '',
-    icon: 'mdi-toolbox',
-    link: 'https://facebook.quasar.dev',
-  },
-]
-
-const search_text = ref('')
-
-const leftDrawerOpen = ref(false)
-
-/*function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value
-}*/
-</script>
