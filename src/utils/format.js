@@ -1,3 +1,4 @@
+// src/utils/format.js
 const formatCurrency = (currency) => {
   const formatted = currency.toLocaleString('pt-br', {
     style: 'currency',

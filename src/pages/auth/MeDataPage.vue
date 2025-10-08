@@ -168,13 +168,12 @@
               <q-card
                 v-for="address in addressList"
                 :key="address.id"
-                class="address-item q-mb-md cursor-pointer"
-                @click="editAddress(address)"
+                class="address-item q-mb-md"
                 bordered
                 flat
               >
                 <q-card-section class="row items-center">
-                  <div class="col">
+                  <div class="col cursor-pointer" @click="editAddress(address)">
                     <div class="row items-center q-mb-xs">
                       <q-icon name="mdi-map-marker" color="secondary" size="20px" class="q-mr-xs" />
                       <span class="text-weight-medium">
@@ -195,7 +194,19 @@
                     </div>
                     <div class="text-grey-6 text-caption">CEP: {{ address.cep }}</div>
                   </div>
-                  <q-icon name="mdi-chevron-right" color="grey-5" size="24px" />
+                  <div class="row items-center q-gutter-xs">
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      icon="mdi-delete"
+                      color="negative"
+                      @click="showDeleteDialog(address)"
+                    >
+                      <q-tooltip>Excluir endereço</q-tooltip>
+                    </q-btn>
+                    <q-icon name="mdi-chevron-right" color="grey-5" size="24px" />
+                  </div>
                 </q-card-section>
               </q-card>
             </div>
@@ -395,6 +406,55 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Dialog de Confirmação de Exclusão -->
+    <q-dialog v-model="deleteDialog" persistent>
+      <q-card class="q-pa-md" style="min-width: 400px">
+        <q-card-section class="text-center">
+          <q-avatar size="64px" color="negative" text-color="white" class="q-mb-md">
+            <q-icon name="mdi-alert" size="32px" />
+          </q-avatar>
+          <div class="text-h6 text-weight-medium">Excluir Endereço</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none text-center">
+          <p class="text-body1 q-mb-sm">Tem certeza de que deseja excluir este endereço?</p>
+          <p class="text-body2 text-negative text-weight-medium q-mb-sm">
+            Esta ação não pode ser revertida!
+          </p>
+          <div
+            v-if="addressToDelete"
+            class="text-body2 text-grey-7 q-mt-md q-pa-sm bg-grey-2 rounded-borders"
+          >
+            <div class="text-weight-medium">
+              {{ addressToDelete.logradouro }}, {{ addressToDelete.numero }}
+            </div>
+            <div>
+              {{ addressToDelete.bairro }}, {{ addressToDelete.cidade }} -
+              {{ addressToDelete.estado }}
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="center" class="q-pt-none">
+          <q-btn
+            flat
+            label="Cancelar"
+            color="grey-7"
+            class="q-px-lg"
+            @click="cancelDelete"
+            :disable="loadingDelete"
+          />
+          <q-btn
+            label="Excluir"
+            color="negative"
+            class="q-px-lg"
+            @click="confirmDelete"
+            :loading="loadingDelete"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -405,17 +465,20 @@ import useAuthUser from 'src/composables/UseAuthUser'
 import useAdressUser from 'src/composables/useAdressUser'
 
 const { user, updatePessoaFisico, updatePessoaJuridica } = useAuthUser()
-const { addAdress, getAdress, updateAdress } = useAdressUser()
+const { addAdress, getAdress, updateAdress, deleteAdress } = useAdressUser()
 
 const loading = ref(false)
 const loadingAddress = ref(false)
 const loadingCep = ref(false)
+const loadingDelete = ref(false)
 const confirmDialog = ref(false)
 const addressConfirmDialog = ref(false)
+const deleteDialog = ref(false)
 const showAddressForm = ref(false)
 const addressList = ref([])
 const loadingAddressList = ref(false)
 const editingAddress = ref(null)
+const addressToDelete = ref(null)
 
 // Formulário de dados pessoais
 const form = reactive({
@@ -591,6 +654,33 @@ const showAddressConfirmDialog = () => {
   addressConfirmDialog.value = true
 }
 
+const showDeleteDialog = (address) => {
+  addressToDelete.value = address
+  deleteDialog.value = true
+}
+
+const cancelDelete = () => {
+  deleteDialog.value = false
+  addressToDelete.value = null
+}
+
+const confirmDelete = async () => {
+  if (!addressToDelete.value) return
+
+  loadingDelete.value = true
+  try {
+    await deleteAdress(addressToDelete.value.id)
+    positiveNotify('Endereço excluído com sucesso!')
+    deleteDialog.value = false
+    addressToDelete.value = null
+    await loadAddresses()
+  } catch (error) {
+    negativeNotify(error.message || 'Erro ao excluir endereço')
+  } finally {
+    loadingDelete.value = false
+  }
+}
+
 const onSubmit = async () => {
   loading.value = true
   try {
@@ -724,9 +814,6 @@ const onSubmitAddress = async () => {
 
 .address-item
   transition: all 0.3s ease
-  &:hover
-    background-color: rgba(0, 0, 0, 0.02)
-    transform: translateX(4px)
 
 // Breakpoints responsivos
 @media (max-width: 1023px)

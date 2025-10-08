@@ -29,18 +29,19 @@ const routes = [
         component: () => import('pages/auth/MePage.vue'),
         meta: { requiresAuth: true },
       },
-      // Adicione outras rotas protegidas aqui
-      {
-        path: 'minha-conta',
-        name: 'minha-conta',
-        component: () => import('pages/auth/MePage.vue'),
-        meta: { requiresAuth: true },
-      },
+
       {
         path: 'meus-dados',
         name: 'meus-dados',
         component: () => import('pages/auth/MeDataPage.vue'),
         meta: { requiresAuth: true },
+      },
+
+      {
+        path: 'admin/cadastrar-produto',
+        name: 'cadastrar-produto',
+        component: () => import('pages/admin/NewProductPage.vue'),
+        meta: { requiresAuth: true, roles: ['staff', 'ceo'] },
       },
     ],
   },
@@ -70,7 +71,7 @@ const routes = [
       },
     ],
     meta: {
-      requiresGuest: true, // Exige que não esteja logado
+      requiresGuest: true, // Exige que NÃO esteja logado
     },
   },
 

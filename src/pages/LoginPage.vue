@@ -12,8 +12,24 @@
       <q-card-section>
         <!-- Formulário de login -->
         <q-form @submit.prevent="onSubmit" class="q-gutter-md">
-          <q-input outlined v-model="email" label="E-mail" type="email" dense required />
-          <q-input outlined v-model="password" label="Senha" type="password" dense required />
+          <q-input
+            outlined
+            v-model="email"
+            label="E-mail"
+            type="email"
+            dense
+            required
+            :rules="loginEmailRules"
+          />
+          <q-input
+            outlined
+            v-model="password"
+            label="Senha"
+            type="password"
+            dense
+            required
+            :rules="loginSenhaRules"
+          />
 
           <div class="row q-gutter-sm">
             <q-btn
@@ -77,6 +93,7 @@ import { useRouter } from 'vue-router'
 
 import useAuthUser from 'src/composables/UseAuthUser'
 import { positiveNotify, negativeNotify } from 'src/composables/UseNotify'
+import { validarLogin } from 'src/utils/validations/validarLogin'
 
 const email = ref('')
 const password = ref('')
@@ -84,19 +101,37 @@ const loading = ref(false)
 const { login, loginWithSocialProvider } = useAuthUser()
 const router = useRouter()
 
+const loginEmailRules = [
+  (val) => !!val || 'E-mail é obrigatório',
+  (val) => val?.trim() === val || 'E-mail não pode ter espaços no início ou fim',
+  (val) => /.+@.+\..+/.test(val) || 'E-mail inválido',
+]
+
+const loginSenhaRules = [
+  (val) => !!val || 'Senha é obrigatória',
+  (val) => val.length >= 8 || 'Senha deve ter pelo menos 8 caracteres',
+  (val) => val === val.trim() || 'Senha não pode ter espaços no início ou fim',
+]
+
 const onSubmit = async () => {
+  const {
+    isValid,
+    message,
+    email: emailValidado,
+    password: passwordValidado,
+  } = await validarLogin(email.value, password.value)
+  if (!isValid) return negativeNotify(message)
+
   loading.value = true
   try {
-    // console.log("e-mail: ", email.value);
-    // console.log("password: ", password.value);
-    await login(email.value, password.value)
+    await login(emailValidado, passwordValidado)
     positiveNotify('Login realizado com sucesso!')
-    loading.value = false
     router.push({ name: 'indexDefault', query: { t: Date.now() } })
   } catch (error) {
-    negativeNotify(error.message)
+    negativeNotify(error.message || 'Erro ao realizar login.')
+  } finally {
+    loading.value = false
   }
-  loading.value = false
 }
 
 const loginWithGoogle = async () => {

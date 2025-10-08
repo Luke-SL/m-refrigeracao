@@ -2,37 +2,63 @@
 import { ref, computed } from 'vue'
 import useSupabase from 'src/boot/supabase'
 
-// Estado global
 const user = ref(null)
 const loading = ref(true)
+const cargo = ref(null) // ⬅️ NOVO
 
 export default function useAuthUser() {
   const { supabase } = useSupabase()
 
-  // Computed para isLoggedIn
   const isLoggedIn = computed(() => !!user.value)
 
-  // Inicialização
-  const initializeAuth = async () => {
+  // ⬅️ NOVO: Computed para verificar se é admin (CEO ou Gerente)
+  const isAdmin = computed(() => {
+    return cargo.value && ['ceo', 'gerente'].includes(cargo.value)
+  })
+
+  // ⬅️ NOVO: Computed para verificar cargo específico
+  const hasCargo = (cargos) => {
+    if (!cargo.value) return false
+    const cargosArray = Array.isArray(cargos) ? cargos : [cargos]
+    return cargosArray.includes(cargo.value)
+  }
+
+  // ⬅️ ATUALIZADO: Buscar cargo junto com o usuário
+  const getUser = async () => {
+    loading.value = true
     try {
       const {
-        data: { user: currentUser },
+        data: { user: userData },
+        error,
       } = await supabase.auth.getUser()
-      user.value = currentUser
 
-      supabase.auth.onAuthStateChange((event, session) => {
-        user.value = session?.user || null
-      })
+      if (error) throw error
+
+      user.value = userData
+
+      // Buscar cargo do usuário na tabela time_comercio
+      if (userData) {
+        const { data: cargoData, error: cargoError } = await supabase
+          .from('time_comercio')
+          .select('cargo')
+          .eq('usuario_id', userData.id)
+          .single()
+
+        if (!cargoError && cargoData) {
+          cargo.value = cargoData.cargo
+        } else {
+          cargo.value = null // Usuário não faz parte da equipe
+        }
+      } else {
+        cargo.value = null
+      }
     } catch (error) {
-      console.error('Erro na inicialização:', error)
+      console.error('Erro ao buscar usuário:', error)
+      user.value = null
+      cargo.value = null
     } finally {
       loading.value = false
     }
-  }
-
-  // Só inicializa se ainda não foi feito
-  if (loading.value) {
-    initializeAuth()
   }
 
   const login = async (email, password) => {
@@ -48,20 +74,18 @@ export default function useAuthUser() {
     return data.user
   }
 
+  const loginWithSocialProvider = async (provider) => {
+    const { data, error } = await supabase.auth.signInWithOAuth({ provider })
+    if (error) throw error
+    return data
+  }
+
   const logout = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
 
-    // Reseta o estado global do usuário
     user.value = null
-  }
-
-  const loginWithSocialProvider = async (provider) => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider,
-    })
-    if (error) throw error
-    return data.user
+    cargo.value = null // ⬅️ Limpar cargo
   }
 
   const registerPessoaFisica = async (form) => {
@@ -106,17 +130,17 @@ export default function useAuthUser() {
   }
 
   const sendPasswordResetEmail = async (email) => {
-    const { user, error } = await supabase.auth.resetPasswordForEmail(email)
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email)
     if (error) throw error
-    return user
+    return data
   }
 
-  const resetPassword = async (new_password) => {
-    const { user, error } = await supabase.auth.updateUser({
-      password: new_password,
+  const resetPassword = async (accessToken, newPassword) => {
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
     })
     if (error) throw error
-    user
+    return data
   }
 
   const updatePessoaFisico = async (form) => {
@@ -165,71 +189,22 @@ export default function useAuthUser() {
     return data.user
   }
 
-  // ============================================
-  // NOVOS MÉTODOS PARA VERIFICAÇÃO DE ROLES
-  // ============================================
-
-  /**
-   * Verifica se o usuário tem uma role específica
-   * @param {string} role - A role a ser verificada (ex: 'ceo', 'staff')
-   * @returns {boolean}
-   */
-  const hasRole = (role) => {
-    return user.value?.user_metadata?.role === role
-  }
-
-  /**
-   * Verifica se o usuário tem uma das roles permitidas
-   * @param {Array<string>} roles - Array de roles permitidas (ex: ['staff', 'ceo'])
-   * @returns {boolean}
-   */
-  const hasAnyRole = (roles) => {
-    const userRole = user.value?.user_metadata?.role
-    return userRole && roles.includes(userRole)
-  }
-
-  /**
-   * Retorna a role do usuário atual
-   * @returns {string|null}
-   */
-  const getUserRole = () => {
-    return user.value?.user_metadata?.role || null
-  }
-
-  /**
-   * Atualiza os dados do usuário (útil após alterações)
-   * @returns {Promise<Object|null>}
-   */
-  const refreshUser = async () => {
-    try {
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser()
-      user.value = currentUser
-      return currentUser
-    } catch (error) {
-      console.error('Erro ao atualizar usuário:', error)
-      return null
-    }
-  }
-
   return {
     user,
     loading,
+    cargo, // ⬅️ NOVO
     isLoggedIn,
+    isAdmin, // ⬅️ NOVO
+    hasCargo, // ⬅️ NOVO
+    getUser,
     login,
-    logout,
     loginWithSocialProvider,
+    logout,
     registerPessoaFisica,
     registerPessoaJuridica,
     sendPasswordResetEmail,
     resetPassword,
-    updatePessoaFisico,
     updatePessoaJuridica,
-    // Novos métodos
-    hasRole,
-    hasAnyRole,
-    getUserRole,
-    refreshUser,
+    updatePessoaFisico,
   }
 }

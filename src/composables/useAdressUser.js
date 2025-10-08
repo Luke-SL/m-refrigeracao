@@ -50,5 +50,11 @@ export default function useAdressUser() {
     return data
   }
 
-  return { addAdress, getAdress, updateAdress }
+  const deleteAdress = async (id) => {
+    const { data, error } = await supabase.from(table).delete().eq('id', id)
+    if (error) throw error
+    return data
+  }
+
+  return { addAdress, getAdress, updateAdress, deleteAdress }
 }

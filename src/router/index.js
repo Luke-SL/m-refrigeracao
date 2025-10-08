@@ -1,3 +1,4 @@
+// src/router/index.js
 import { defineRouter } from '#q-app/wrappers'
 import {
   createRouter,

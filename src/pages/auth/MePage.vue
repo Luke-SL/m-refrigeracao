@@ -1,6 +1,6 @@
 <template>
   <q-page class="bg-grey-2 q-pa-md">
-    <div v-if="$auth.user && $auth.user.value.user_metadata.role === 'ceo'">
+    <div v-if="$auth.hasRole('ceo') || $auth.hasRole('staff')" class="q-mb-xl">
       <div class="text-h5 text-bold text-center q-mb-lg">Painel Administrativo</div>
       <div class="row q-col-gutter-md q-mb-xl">
         <div class="col-12 col-sm-6">
@@ -9,7 +9,7 @@
             color="secondary"
             class="full-width q-pa-md"
             icon="mdi-shield-account"
-            :to="{ name: 'adminDashboard' }"
+            :to="{ name: 'cadastrar-produto' }"
             unelevated
           />
         </div>

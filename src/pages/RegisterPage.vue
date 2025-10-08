@@ -18,14 +18,20 @@
               label="Nome *"
               outlined
               :class="$q.screen.lt.md ? 'col-12' : 'col'"
-              :rules="[(val) => !!val || 'Nome é obrigatório']"
+              :rules="[
+                (val) => !!val || 'Nome é obrigatório',
+                (val) => val?.trim().length >= 2 || 'Nome muito curto',
+              ]"
             />
             <q-input
               v-model="form.sobrenome"
               label="Sobrenome *"
               outlined
               :class="$q.screen.lt.md ? 'col-12' : 'col'"
-              :rules="[(val) => !!val || 'Sobrenome é obrigatório']"
+              :rules="[
+                (val) => !!val || 'Sobrenome é obrigatório',
+                (val) => val?.trim().length >= 2 || 'Sobrenome muito curto',
+              ]"
             />
           </div>
 
@@ -83,7 +89,14 @@
               label="Data de Nascimento *"
               outlined
               :class="$q.screen.lt.md ? 'col-12' : 'col'"
-              :rules="[(val) => !!val || 'Data de nascimento é obrigatória']"
+              :rules="[
+                (val) => !!val || 'Data de nascimento é obrigatória',
+                (val) => {
+                  if (!val) return true
+                  const d = new Date(val)
+                  return (!isNaN(d.getTime()) && d < new Date()) || 'Data de nascimento inválida'
+                },
+              ]"
             />
           </div>
 
@@ -105,7 +118,10 @@
               mask="(##) #####-####"
               unmasked-value
               :class="$q.screen.lt.md ? 'col-12' : 'col'"
-              :rules="[(val) => !!val || 'Celular é obrigatório']"
+              :rules="[
+                (val) => !!val || 'Celular é obrigatório',
+                (val) => val.replace(/\D/g, '').length === 11 || 'Celular inválido',
+              ]"
             />
           </div>
 
@@ -175,6 +191,7 @@ import { useQuasar } from 'quasar'
 import UseAuthUser from 'src/composables/UseAuthUser.js'
 import { positiveNotify, negativeNotify } from 'src/composables/UseNotify'
 import { useRouter } from 'vue-router'
+import { validarFormulario } from 'src/utils/validations/validarFormulario.js'
 
 const $q = useQuasar()
 const loading = ref(false)
@@ -196,7 +213,6 @@ const form = reactive({
   dataNascimento: '', // novo campo
   senha: '',
   confirmacaoSenha: '',
-  role: 'cliente',
 })
 
 const tiposPessoa = [
@@ -205,12 +221,14 @@ const tiposPessoa = [
 ]
 
 const emailRules = [
-  (val) => !!val || 'Email é obrigatório',
-  (val) => /.+@.+\..+/.test(val) || 'Email deve ser válido',
+  (val) => !!val || 'E-mail é obrigatório',
+  (val) => val?.trim() === val || 'E-mail não pode ter espaços no início ou fim',
+  (val) => /.+@.+\..+/.test(val) || 'E-mail inválido',
 ]
 const senhaRules = [
   (val) => !!val || 'Senha é obrigatória',
-  (val) => val.length >= 6 || 'Senha deve ter pelo menos 6 caracteres',
+  (val) => val.length >= 8 || 'Senha deve ter pelo menos 8 caracteres',
+  (val) => val === val.trim() || 'Senha não pode ter espaços no início ou fim',
 ]
 const confirmacaoSenhaRules = [
   (val) => !!val || 'Confirmação de senha é obrigatória',
@@ -219,10 +237,11 @@ const confirmacaoSenhaRules = [
 const documentoRules = [
   (val) => !!val || (form.tipoPessoa === 'juridica' ? 'CNPJ é obrigatório' : 'CPF é obrigatório'),
   (val) => {
+    const digits = val.replace(/\D/g, '')
     if (form.tipoPessoa === 'juridica') {
-      return val.replace(/\D/g, '').length === 14 || 'CNPJ deve ter 14 dígitos'
+      return digits.length === 14 || 'CNPJ deve ter 14 dígitos'
     } else {
-      return val.replace(/\D/g, '').length === 11 || 'CPF deve ter 11 dígitos'
+      return digits.length === 11 || 'CPF deve ter 11 dígitos'
     }
   },
 ]
@@ -234,24 +253,27 @@ const onTipoPessoaChange = () => {
 }
 
 const onSubmit = async () => {
+  const { isValid, message, form: formValidado } = await validarFormulario(form)
+  if (!isValid) {
+    negativeNotify(message)
+    return
+  }
   loading.value = true
   // console.log(form)
+  loading.value = true
   try {
-    if (form.tipoPessoa === 'fisica') {
-      await registerPessoaFisica(form)
+    if (formValidado.tipoPessoa === 'fisica') {
+      await registerPessoaFisica(formValidado)
     } else {
-      await registerPessoaJuridica(form)
+      await registerPessoaJuridica(formValidado)
     }
     positiveNotify('Cadastro realizado com sucesso!')
-    router.push({
-      name: 'email-confirmation',
-      query: { email: form.email },
-    })
-    loading.value = false
+    router.push({ name: 'email-confirmation', query: { email: formValidado.email } })
   } catch (error) {
-    negativeNotify(error.message)
+    negativeNotify(error.message || 'Erro ao cadastrar usuário.')
+  } finally {
+    loading.value = false
   }
-  loading.value = false
 }
 </script>
 
