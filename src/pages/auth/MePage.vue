@@ -1,6 +1,6 @@
 <template>
   <q-page class="bg-grey-2 q-pa-md">
-    <div v-if="$auth.hasRole('ceo') || $auth.hasRole('staff')" class="q-mb-xl">
+    <div v-if="isAdmin" class="q-mb-xl">
       <div class="text-h5 text-bold text-center q-mb-lg">Painel Administrativo</div>
       <div class="row q-col-gutter-md q-mb-xl">
         <div class="col-12 col-sm-6">
@@ -46,7 +46,7 @@
           color="primary"
           class="full-width q-pa-md"
           icon="mdi-account"
-          to="meus-dados"
+          :to="{ name: 'meus-dados' }"
           unelevated
         />
       </div>
@@ -99,5 +99,7 @@
 </template>
 
 <script setup>
-// apenas rotas definidas no router
+import useAuthUser from 'src/composables/UseAuthUser'
+
+const { isAdmin } = useAuthUser()
 </script>

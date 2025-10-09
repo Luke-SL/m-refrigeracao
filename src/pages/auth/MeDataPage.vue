@@ -463,6 +463,8 @@ import { reactive, ref, onMounted } from 'vue'
 import { positiveNotify, negativeNotify } from 'src/composables/UseNotify'
 import useAuthUser from 'src/composables/UseAuthUser'
 import useAdressUser from 'src/composables/useAdressUser'
+import { validarUpdateUsuario } from 'src/utils/validations/validarUpdateUsuario.js'
+import { validarEndereco } from 'src/utils/validations/validarEndereco.js'
 
 const { user, updatePessoaFisico, updatePessoaJuridica } = useAuthUser()
 const { addAdress, getAdress, updateAdress, deleteAdress } = useAdressUser()
@@ -682,26 +684,31 @@ const confirmDelete = async () => {
 }
 
 const onSubmit = async () => {
+  const { isValid, message, form: formValidado } = await validarUpdateUsuario(form)
+  if (!isValid) {
+    negativeNotify(message)
+    return
+  }
   loading.value = true
   try {
     if (form.tipoPessoa === 'fisica') {
       await updatePessoaFisico({
-        primeiro_nome: form.nome,
-        sobrenome: form.sobrenome,
-        tipo_pessoa: form.tipoPessoa,
-        documento: form.documento,
-        data_nascimento: form.dataNascimento,
-        celular: form.celular,
+        primeiro_nome: formValidado.nome,
+        sobrenome: formValidado.sobrenome,
+        tipo_pessoa: formValidado.tipoPessoa,
+        documento: formValidado.documento,
+        data_nascimento: formValidado.dataNascimento,
+        celular: formValidado.celular,
       })
     } else {
       await updatePessoaJuridica({
-        primeiro_nome: form.nome,
-        sobrenome: form.sobrenome,
-        tipo_pessoa: form.tipoPessoa,
-        nome_fantasia: form.nomeFantasia,
-        razao_social: form.razaoSocial,
-        documento: form.documento,
-        celular: form.celular,
+        primeiro_nome: formValidado.nome,
+        sobrenome: formValidado.sobrenome,
+        tipo_pessoa: formValidado.tipoPessoa,
+        nome_fantasia: formValidado.nomeFantasia,
+        razao_social: formValidado.razaoSocial,
+        documento: formValidado.documento,
+        celular: formValidado.celular,
         data_nascimento: null,
       })
     }
@@ -715,17 +722,28 @@ const onSubmit = async () => {
 }
 
 const onSubmitAddress = async () => {
+  const {
+    isValid,
+    form: addressFormValidado,
+    message,
+  } = await validarEndereco(addressForm, estados)
+
+  if (!isValid) {
+    negativeNotify(message)
+    return
+  }
+
   loadingAddress.value = true
   try {
     const addressData = {
-      cep: addressForm.cep,
-      logradouro: addressForm.logradouro,
-      numero: addressForm.numero,
-      complemento: addressForm.complemento,
-      bairro: addressForm.bairro,
-      cidade: addressForm.cidade,
-      estado: addressForm.estado,
-      endereco_padrao: addressForm.enderecoPadrao,
+      cep: addressFormValidado.cep,
+      logradouro: addressFormValidado.logradouro,
+      numero: addressFormValidado.numero,
+      complemento: addressFormValidado.complemento,
+      bairro: addressFormValidado.bairro,
+      cidade: addressFormValidado.cidade,
+      estado: addressFormValidado.estado,
+      endereco_padrao: addressFormValidado.enderecoPadrao,
     }
 
     if (editingAddress.value) {

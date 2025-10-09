@@ -24,24 +24,28 @@ const routes = [
 
       // Rotas protegidas (requer autenticação)
       {
-        path: 'minha-pagina',
+        path: 'auth/minha-pagina',
         name: 'minha-pagina',
         component: () => import('pages/auth/MePage.vue'),
         meta: { requiresAuth: true },
       },
 
       {
-        path: 'meus-dados',
+        path: 'auth/meus-dados',
         name: 'meus-dados',
         component: () => import('pages/auth/MeDataPage.vue'),
         meta: { requiresAuth: true },
       },
 
+      // ⬅️ ATUALIZADO: Usar requiresCargos
       {
         path: 'admin/cadastrar-produto',
         name: 'cadastrar-produto',
         component: () => import('pages/admin/NewProductPage.vue'),
-        meta: { requiresAuth: true, roles: ['staff', 'ceo'] },
+        meta: {
+          requiresAuth: true,
+          requiresCargos: ['ceo', 'gerente'], // ⬅️ MUDANÇA
+        },
       },
     ],
   },
@@ -71,12 +75,10 @@ const routes = [
       },
     ],
     meta: {
-      requiresGuest: true, // Exige que NÃO esteja logado
+      requiresGuest: true,
     },
   },
 
-  // Always leave this as last one,
-  // but you can also remove it
   {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue'),

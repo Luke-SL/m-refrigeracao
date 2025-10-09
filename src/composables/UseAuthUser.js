@@ -5,24 +5,73 @@ import useSupabase from 'src/boot/supabase'
 // Estado global
 const user = ref(null)
 const loading = ref(true)
+const cargo = ref(null)
+let authInitialized = false
 
 export default function useAuthUser() {
   const { supabase } = useSupabase()
 
-  // Computed para isLoggedIn
   const isLoggedIn = computed(() => !!user.value)
 
-  // Inicialização
+  const isAdmin = computed(() => {
+    return cargo.value && ['ceo', 'gerente'].includes(cargo.value)
+  })
+
+  const fetchUserCargo = async (userId) => {
+    if (!userId) {
+      cargo.value = null
+      return
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('time_comercio')
+        .select('cargo')
+        .eq('usuario_id', userId)
+        .single()
+
+      if (!error && data) {
+        cargo.value = data.cargo
+      } else {
+        cargo.value = null
+      }
+    } catch (error) {
+      console.error('Erro ao buscar cargo:', error)
+      cargo.value = null
+    }
+  }
+
   const initializeAuth = async () => {
+    if (authInitialized) return
+
     try {
       const {
         data: { user: currentUser },
       } = await supabase.auth.getUser()
       user.value = currentUser
 
-      supabase.auth.onAuthStateChange((event, session) => {
+      if (currentUser) {
+        await fetchUserCargo(currentUser.id)
+      }
+
+      // ⬅️ CORREÇÃO: Não buscar cargo em TODOS os eventos
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        const previousUserId = user.value?.id
         user.value = session?.user || null
+
+        // ⬅️ Só buscar cargo se o USUÁRIO mudou (login/logout)
+        // NÃO buscar em eventos como USER_UPDATED (que é o update de perfil)
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          if (session?.user && session.user.id !== previousUserId) {
+            await fetchUserCargo(session.user.id)
+          }
+        } else if (event === 'SIGNED_OUT') {
+          cargo.value = null
+        }
+        // USER_UPDATED não faz nada com o cargo
       })
+
+      authInitialized = true
     } catch (error) {
       console.error('Erro na inicialização:', error)
     } finally {
@@ -30,8 +79,7 @@ export default function useAuthUser() {
     }
   }
 
-  // Só inicializa se ainda não foi feito
-  if (loading.value) {
+  if (loading.value && !authInitialized) {
     initializeAuth()
   }
 
@@ -42,8 +90,8 @@ export default function useAuthUser() {
     })
     if (error) throw error
 
-    // Atualiza o estado global do usuário
     user.value = data.user
+    await fetchUserCargo(data.user.id)
 
     return data.user
   }
@@ -52,8 +100,8 @@ export default function useAuthUser() {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
 
-    // Reseta o estado global do usuário
     user.value = null
+    cargo.value = null
   }
 
   const loginWithSocialProvider = async (provider) => {
@@ -106,17 +154,17 @@ export default function useAuthUser() {
   }
 
   const sendPasswordResetEmail = async (email) => {
-    const { user, error } = await supabase.auth.resetPasswordForEmail(email)
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email)
     if (error) throw error
-    return user
+    return data
   }
 
   const resetPassword = async (new_password) => {
-    const { user, error } = await supabase.auth.updateUser({
+    const { data, error } = await supabase.auth.updateUser({
       password: new_password,
     })
     if (error) throw error
-    user
+    return data.user
   }
 
   const updatePessoaFisico = async (form) => {
@@ -135,9 +183,7 @@ export default function useAuthUser() {
     })
     if (error) throw error
 
-    // Atualiza o estado global do usuário
     user.value = data.user
-
     return data.user
   }
 
@@ -145,6 +191,7 @@ export default function useAuthUser() {
     const { data, error } = await supabase.auth.updateUser({
       email: form.email,
       options: {
+        // ⬅️ MANTÉM options como estava
         data: {
           primeiro_nome: form.primeiro_nome,
           sobrenome: form.sobrenome,
@@ -159,53 +206,35 @@ export default function useAuthUser() {
     })
     if (error) throw error
 
-    // Atualiza o estado global do usuário
     user.value = data.user
-
     return data.user
   }
 
-  // ============================================
-  // NOVOS MÉTODOS PARA VERIFICAÇÃO DE ROLES
-  // ============================================
-
-  /**
-   * Verifica se o usuário tem uma role específica
-   * @param {string} role - A role a ser verificada (ex: 'ceo', 'staff')
-   * @returns {boolean}
-   */
-  const hasRole = (role) => {
-    return user.value?.user_metadata?.role === role
+  const hasCargo = (cargoVerificar) => {
+    return cargo.value === cargoVerificar
   }
 
-  /**
-   * Verifica se o usuário tem uma das roles permitidas
-   * @param {Array<string>} roles - Array de roles permitidas (ex: ['staff', 'ceo'])
-   * @returns {boolean}
-   */
-  const hasAnyRole = (roles) => {
-    const userRole = user.value?.user_metadata?.role
-    return userRole && roles.includes(userRole)
+  const hasAnyCargo = (cargos) => {
+    return cargo.value && cargos.includes(cargo.value)
   }
 
-  /**
-   * Retorna a role do usuário atual
-   * @returns {string|null}
-   */
-  const getUserRole = () => {
-    return user.value?.user_metadata?.role || null
+  const getUserCargo = () => {
+    return cargo.value
   }
 
-  /**
-   * Atualiza os dados do usuário (útil após alterações)
-   * @returns {Promise<Object|null>}
-   */
   const refreshUser = async () => {
     try {
       const {
         data: { user: currentUser },
       } = await supabase.auth.getUser()
       user.value = currentUser
+
+      if (currentUser) {
+        await fetchUserCargo(currentUser.id)
+      } else {
+        cargo.value = null
+      }
+
       return currentUser
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error)
@@ -216,7 +245,9 @@ export default function useAuthUser() {
   return {
     user,
     loading,
+    cargo,
     isLoggedIn,
+    isAdmin,
     login,
     logout,
     loginWithSocialProvider,
@@ -226,10 +257,9 @@ export default function useAuthUser() {
     resetPassword,
     updatePessoaFisico,
     updatePessoaJuridica,
-    // Novos métodos
-    hasRole,
-    hasAnyRole,
-    getUserRole,
+    hasCargo,
+    hasAnyCargo,
+    getUserCargo,
     refreshUser,
   }
 }

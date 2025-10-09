@@ -75,7 +75,7 @@
                     :label="'Olá, ' + $auth.user.value.user_metadata.primeiro_nome"
                   >
                     <q-list>
-                      <q-item clickable v-close-popup @click="$router.push('/minha-pagina')">
+                      <q-item clickable v-close-popup @click="$router.push('/auth/minha-pagina')">
                         <q-item-section avatar>
                           <q-avatar
                             icon="mdi-account-arrow-left-outline"

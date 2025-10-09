@@ -1,3 +1,4 @@
+// src/composables/useApi.js
 // image/jpeg, image/png, image/webp
 
 import useSupabase from 'src/boot/supabase'

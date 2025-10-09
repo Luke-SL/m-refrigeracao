@@ -7,7 +7,7 @@ export default ({ app, router }) => {
   router.beforeEach(async (to, from, next) => {
     const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
     const requiresGuest = to.matched.some((record) => record.meta.requiresGuest)
-    const requiredRoles = to.meta.roles // Array de roles permitidas
+    const requiresCargos = to.meta.requiresCargos // ⬅️ MUDANÇA: Array de cargos permitidos
 
     // Aguarda o loading terminar
     while (auth.loading.value) {
@@ -26,12 +26,17 @@ export default ({ app, router }) => {
       return
     }
 
-    // Verifica roles se especificadas
-    if (requiresAuth && requiredRoles && requiredRoles.length > 0) {
-      const userRole = auth.user.value?.user_metadata?.role
+    // ⬅️ ATUALIZADO: Verifica cargos da tabela time_comercio
+    if (requiresAuth && requiresCargos && requiresCargos.length > 0) {
+      // Se não tem cargo (não está na equipe), redireciona para home
+      if (!auth.cargo.value) {
+        next('/')
+        return
+      }
 
-      if (!userRole || !requiredRoles.includes(userRole)) {
-        next('/acesso-negado')
+      // Verifica se o cargo do usuário está na lista permitida
+      if (!requiresCargos.includes(auth.cargo.value)) {
+        next('/')
         return
       }
     }

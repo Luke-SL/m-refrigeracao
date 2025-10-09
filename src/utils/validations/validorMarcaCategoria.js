@@ -1,3 +1,4 @@
+// validorMarcaCategoria.js
 const validarMarcaCategoria = async (form) => {
   if (typeof form.nome !== 'string') return { isValid: false, message: 'Nome inválido' }
   form.nome = form.nome.trim()

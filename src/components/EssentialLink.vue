@@ -12,7 +12,7 @@
     clickable
     class="text-primary"
     v-else-if="loading == false && !!user == true"
-    @click="handleRedirect('/minha-pagina')"
+    @click="handleRedirect('auth/minha-pagina')"
   >
     <q-item-section avatar>
       <q-icon name="mdi-account" />

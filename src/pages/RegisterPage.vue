@@ -259,8 +259,6 @@ const onSubmit = async () => {
     return
   }
   loading.value = true
-  // console.log(form)
-  loading.value = true
   try {
     if (formValidado.tipoPessoa === 'fisica') {
       await registerPessoaFisica(formValidado)

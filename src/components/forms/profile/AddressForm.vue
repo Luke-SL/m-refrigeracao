@@ -6,42 +6,31 @@
         color="secondary"
         label="Voltar"
         icon="mdi-arrow-left"
-        @click="emit('cancel')"
+        @click="$emit('cancel')"
       />
     </div>
 
-    <q-form @submit.prevent="onSubmit" class="q-gutter-md">
+    <q-form @submit.prevent="$emit('submit')" class="q-gutter-md">
       <!-- CEP -->
       <div class="form-row">
         <q-input
-          v-model="form.cep"
+          :model-value="modelValue.cep"
+          @update:model-value="onCepChange"
           label="CEP *"
           outlined
           mask="#####-###"
           unmasked-value
           class="form-input-full"
           :rules="cepRules"
-          @blur="buscarCep"
           :loading="loadingCep"
-        >
-          <template v-slot:append>
-            <q-icon
-              v-if="!loadingCep"
-              name="mdi-map-search"
-              color="secondary"
-              class="cursor-pointer"
-              @click="buscarCep"
-            >
-              <q-tooltip>Buscar CEP</q-tooltip>
-            </q-icon>
-          </template>
-        </q-input>
+        />
       </div>
 
       <!-- Logradouro -->
       <div class="form-row">
         <q-input
-          v-model="form.logradouro"
+          :model-value="modelValue.logradouro"
+          @update:model-value="updateField('logradouro', $event)"
           label="Logradouro *"
           outlined
           class="form-input-full"
@@ -52,25 +41,27 @@
       <!-- Número e Complemento -->
       <div class="form-row">
         <q-input
-          v-model="form.numero"
+          :model-value="modelValue.numero"
+          @update:model-value="updateField('numero', $event)"
           label="Número *"
           outlined
           class="form-input form-input-number"
           :rules="[(val) => !!val || 'Número é obrigatório']"
         />
         <q-input
-          v-model="form.complemento"
+          :model-value="modelValue.complemento"
+          @update:model-value="updateField('complemento', $event)"
           label="Complemento"
           outlined
           class="form-input form-input-complement"
-          hint="Apto, Bloco, etc."
         />
       </div>
 
       <!-- Bairro -->
       <div class="form-row">
         <q-input
-          v-model="form.bairro"
+          :model-value="modelValue.bairro"
+          @update:model-value="updateField('bairro', $event)"
           label="Bairro *"
           outlined
           class="form-input-full"
@@ -81,14 +72,16 @@
       <!-- Cidade e Estado -->
       <div class="form-row">
         <q-input
-          v-model="form.cidade"
+          :model-value="modelValue.cidade"
+          @update:model-value="updateField('cidade', $event)"
           label="Cidade *"
           outlined
           class="form-input form-input-city"
           :rules="[(val) => !!val || 'Cidade é obrigatória']"
         />
         <q-select
-          v-model="form.estado"
+          :model-value="modelValue.estado"
+          @update:model-value="updateField('estado', $event)"
           :options="estados"
           label="Estado *"
           outlined
@@ -102,28 +95,22 @@
       <!-- Checkbox Endereço Padrão -->
       <div class="form-row">
         <q-checkbox
-          v-model="form.enderecoPadrao"
+          :model-value="modelValue.enderecoPadrao"
+          @update:model-value="updateField('enderecoPadrao', $event)"
           label="Tornar este meu endereço padrão"
-          color="secondary"
           class="form-input-full"
-        >
-          <q-tooltip v-if="!form.enderecoPadrao">
-            O endereço padrão será usado automaticamente em novos pedidos
-          </q-tooltip>
-        </q-checkbox>
+        />
       </div>
 
       <!-- Botão Adicionar/Atualizar Endereço -->
       <div class="flex flex-center q-mt-lg">
         <q-btn
           type="submit"
-          :label="isEditing ? 'Atualizar Endereço' : 'Adicionar Endereço'"
-          :icon="isEditing ? 'mdi-check' : 'mdi-plus'"
+          :label="editing ? 'Atualizar Endereço' : 'Adicionar Endereço'"
           color="secondary"
           size="xl"
           class="q-px-xl submit-btn q-mt-sm"
           :loading="loading"
-          unelevated
         />
       </div>
     </q-form>
@@ -131,15 +118,12 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue'
-import { negativeNotify } from 'src/composables/UseNotify'
-
 const props = defineProps({
-  initialData: {
+  modelValue: {
     type: Object,
     required: true,
   },
-  isEditing: {
+  editing: {
     type: Boolean,
     default: false,
   },
@@ -147,31 +131,13 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-})
-
-const emit = defineEmits(['submit', 'cancel'])
-
-const loadingCep = ref(false)
-
-const form = reactive({
-  cep: '',
-  logradouro: '',
-  numero: '',
-  complemento: '',
-  bairro: '',
-  cidade: '',
-  estado: '',
-  enderecoPadrao: false,
-})
-
-// Atualizar formulário quando os dados iniciais mudarem
-watch(
-  () => props.initialData,
-  (newData) => {
-    Object.assign(form, newData)
+  loadingCep: {
+    type: Boolean,
+    default: false,
   },
-  { immediate: true, deep: true },
-)
+})
+
+const emit = defineEmits(['update:modelValue', 'submit', 'cancel', 'search-cep'])
 
 const estados = [
   { label: 'Acre', value: 'AC' },
@@ -205,72 +171,19 @@ const estados = [
 
 const cepRules = [
   (val) => !!val || 'CEP é obrigatório',
-  (val) => {
-    const cleanCep = val?.replace(/\D/g, '') || ''
-    return cleanCep.length === 8 || 'CEP deve ter 8 dígitos'
-  },
+  (val) => val.replace(/\D/g, '').length === 8 || 'CEP deve ter 8 dígitos',
 ]
 
-const buscarCep = async () => {
-  const cep = form.cep?.replace(/\D/g, '') || ''
-
-  if (cep.length !== 8) {
-    return
-  }
-
-  loadingCep.value = true
-
-  try {
-    const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
-
-    if (!response.ok) {
-      throw new Error(`Erro na requisição: ${response.status}`)
-    }
-
-    const data = await response.json()
-
-    if (data.erro) {
-      negativeNotify('CEP não encontrado')
-      return
-    }
-
-    // Preencher campos automaticamente
-    form.logradouro = data.logradouro || ''
-    form.bairro = data.bairro || ''
-    form.cidade = data.localidade || ''
-    form.estado = data.uf || ''
-
-    // Se o CEP retornou dados, focar no campo número
-    if (data.logradouro) {
-      // Pequeno delay para garantir que os campos foram atualizados
-      setTimeout(() => {
-        const numeroInput = document.querySelector('input[aria-label="Número *"]')
-        numeroInput?.focus()
-      }, 100)
-    }
-  } catch (error) {
-    console.error('Erro ao buscar CEP:', error)
-    negativeNotify('Erro ao buscar CEP. Verifique sua conexão e tente novamente.')
-  } finally {
-    loadingCep.value = false
-  }
+const updateField = (field, value) => {
+  emit('update:modelValue', { ...props.modelValue, [field]: value })
 }
 
-const onSubmit = () => {
-  // Validação adicional antes de enviar
-  if (
-    !form.cep ||
-    !form.logradouro ||
-    !form.numero ||
-    !form.bairro ||
-    !form.cidade ||
-    !form.estado
-  ) {
-    negativeNotify('Por favor, preencha todos os campos obrigatórios')
-    return
+const onCepChange = (value) => {
+  updateField('cep', value)
+  const cep = value.replace(/\D/g, '')
+  if (cep.length === 8) {
+    emit('search-cep')
   }
-
-  emit('submit', { ...form })
 }
 </script>
 
