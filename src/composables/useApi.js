@@ -67,7 +67,6 @@ export default function useApi() {
       .select('id')
 
     if (error) {
-      console.error('Erro ao inserir produto:', error)
       throw error
     }
 
@@ -118,7 +117,6 @@ export default function useApi() {
       positiveNotify('Variação adicionada com sucesso!')
     } catch (err) {
       negativeNotify(`Erro ao adicionar variação: ${err.message}`)
-      console.error(err)
     }
   }
 
@@ -175,7 +173,6 @@ export default function useApi() {
         .upload(filePath, file, { cacheControl: '3600', upsert: false })
 
       if (error) {
-        console.error('Erro no upload do arquivo', file.name, error)
         errors.push({ file: file.name, message: error.message || 'Erro no upload', details: error })
         continue
       }
@@ -220,6 +217,166 @@ export default function useApi() {
     return imageUrls
   }
 
+  // ============================================
+  // ADICIONE ESTAS FUNÇÕES NO SEU useApi.js
+  // (mantendo todas as funções existentes)
+  // ============================================
+
+  // Buscar produtos com variações para a loja (filtrado por categoria)
+  const getProdutosParaLoja = async (categoriaNome = null) => {
+    try {
+      let query = supabase
+        .from(table_produto_variacao)
+        .select(
+          `
+        id,
+        voltagem,
+        tipo,
+        btus,
+        preco,
+        estoque,
+        desconto_a_vista,
+        garantia,
+        produto:produto_id(
+          id,
+          nome,
+          descricao,
+          path_imagens,
+          marca:marca_id(nome),
+          categoria:categoria_id(id, nome)
+        )
+      `,
+        )
+        .gt('estoque', 0)
+        .order('created_at', { ascending: false })
+
+      const { data, error } = await query
+      if (error) throw error
+
+      // Filtra por categoria se fornecido
+      let filteredData = data
+      if (categoriaNome) {
+        filteredData = data.filter((variacao) => {
+          const categoriaProduto = variacao.produto?.categoria?.nome?.toLowerCase()
+          return categoriaProduto && categoriaProduto.includes(categoriaNome.toLowerCase())
+        })
+      }
+
+      // Formata os dados
+      const produtosFormatados = await Promise.all(
+        filteredData.map(async (variacao) => {
+          const imageUrls = await getProductImages(variacao.produto.path_imagens)
+
+          return {
+            id: variacao.id, // ID da variação
+            productName:
+              `${variacao.produto.nome} - ${variacao.btus ? variacao.btus + ' BTUs' : ''} ${variacao.voltagem} ${variacao.tipo ? ' - ' + variacao.tipo : ''}`.trim(),
+            imagePath: imageUrls[0] || '/placeholder.png',
+            images: imageUrls,
+            price: variacao.preco,
+            discount: variacao.desconto_a_vista || 0,
+            quota: 12,
+
+            // Dados da variação
+            voltagem: variacao.voltagem,
+            tipo: variacao.tipo,
+            btus: variacao.btus,
+            garantia: variacao.garantia,
+            estoque: variacao.estoque,
+
+            // Dados do produto
+            descricao: variacao.produto.descricao,
+            marca: variacao.produto.marca?.nome,
+            categoria: variacao.produto.categoria?.nome,
+          }
+        }),
+      )
+
+      return produtosFormatados
+    } catch (error) {
+      negativeNotify(`Erro ao carregar produtos: ${error.message}`)
+      return []
+    }
+  }
+
+  // Buscar produtos de Ar-Condicionado
+  const getProdutosArCondicionado = async () => {
+    return await getProdutosParaLoja('ar-condicionado')
+  }
+
+  // Buscar produtos Ventiladores
+  const getProdutosVentiladores = async () => {
+    return await getProdutosParaLoja('ventilador')
+  }
+
+  // Buscar uma variação específica pelo ID
+  const getVariacaoPorId = async (variacaoId) => {
+    try {
+      const { data, error } = await supabase
+        .from(table_produto_variacao)
+        .select(
+          `
+        id,
+        voltagem,
+        tipo,
+        btus,
+        preco,
+        estoque,
+        desconto_a_vista,
+        garantia,
+        peso_liquido,
+        peso_bruto,
+        largura,
+        altura,
+        profundidade,
+        produto:produto_id(
+          id,
+          nome,
+          descricao,
+          path_imagens,
+          marca:marca_id(nome),
+          categoria:categoria_id(id, nome)
+        )
+      `,
+        )
+        .eq('id', variacaoId)
+        .single()
+
+      if (error) throw error
+
+      const imageUrls = await getProductImages(data.produto.path_imagens)
+
+      return {
+        id: data.id,
+        productName: `${data.produto.nome} - ${data.btus ? data.btus + ' BTUs' : ''} ${data.voltagem} `,
+        imagePath: imageUrls[0] || '/placeholder.png',
+        images: imageUrls,
+        price: data.preco,
+        discount: data.desconto_a_vista || 0,
+        quota: 12,
+
+        voltagem: data.voltagem,
+        tipo: data.tipo,
+        btus: data.btus,
+        garantia: data.garantia,
+        estoque: data.estoque,
+
+        descricao: data.produto.descricao,
+        marca: data.produto.marca?.nome,
+        categoria: data.produto.categoria?.nome,
+
+        peso_liquido: data.peso_liquido,
+        peso_bruto: data.peso_bruto,
+        largura: data.largura,
+        altura: data.altura,
+        profundidade: data.profundidade,
+      }
+    } catch (error) {
+      negativeNotify(`Erro ao carregar produto: ${error.message}`)
+      return null
+    }
+  }
+
   return {
     addMarca,
     getMarcas,
@@ -231,5 +388,10 @@ export default function useApi() {
     getProdutoVariacoes,
     uploadProductImages,
     getProductImages,
+    // NOVAS FUNÇÕES PARA A LOJA:
+    getProdutosParaLoja,
+    getProdutosArCondicionado,
+    getProdutosVentiladores,
+    getVariacaoPorId,
   }
 }

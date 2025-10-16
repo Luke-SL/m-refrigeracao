@@ -42,7 +42,7 @@
         </q-select>
 
         <div class="row q-col-gutter-md">
-          <div class="col-12 col-md-4">
+          <div class="col-12" :class="isArCondicionado ? 'col-md-4' : 'col-md-12'">
             <q-select
               v-model="variacao.voltagem"
               :options="['110V', '220V', 'Bivolt']"
@@ -51,7 +51,7 @@
               :rules="[(val) => !!val || 'Campo obrigatório']"
             />
           </div>
-          <div class="col-12 col-md-4">
+          <div v-if="isArCondicionado" class="col-12 col-md-4">
             <q-select
               v-model="variacao.tipo"
               :options="['Quente e Frio', 'Só Frio']"
@@ -60,8 +60,15 @@
               :rules="[(val) => !!val || 'Campo obrigatório']"
             />
           </div>
-          <div class="col-12 col-md-4">
-            <q-input v-model="variacao.btus" label="BTUs" outlined type="number" min="0" />
+          <div v-if="isArCondicionado" class="col-12 col-md-4">
+            <q-input
+              v-model="variacao.btus"
+              label="BTUs *"
+              outlined
+              type="number"
+              min="0"
+              :rules="[(val) => (val !== null && val !== '') || 'Campo obrigatório']"
+            />
           </div>
         </div>
 
@@ -199,7 +206,7 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import useApi from 'src/composables/useApi'
 import { positiveNotify, negativeNotify } from 'src/composables/UseNotify'
 import { formatCurrency } from 'src/utils/format'
@@ -221,7 +228,7 @@ export default {
     const variacao = ref({
       produto: null,
       voltagem: '',
-      tipo: '',
+      tipo: null,
       btus: null,
       preco: null,
       descontoVista: 0,
@@ -233,6 +240,10 @@ export default {
       largura: '',
       profundidade: '',
       fichaTecnica: [],
+    })
+
+    const isArCondicionado = computed(() => {
+      return variacao.value.produto?.categoria?.nome === 'Ar-Condicionado'
     })
 
     const formatarPreco = (valor) => {
@@ -298,7 +309,7 @@ export default {
       variacao.value = {
         produto: null,
         voltagem: '',
-        tipo: '',
+        tipo: null,
         btus: null,
         preco: null,
         descontoVista: 0,
@@ -326,6 +337,7 @@ export default {
       variacao,
       loading,
       precoFormatado,
+      isArCondicionado,
       formatarPreco,
       normalizeDecimal,
       handleSave,

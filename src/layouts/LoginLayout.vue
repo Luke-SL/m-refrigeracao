@@ -97,9 +97,9 @@
 
 <script setup>
 import { ref } from 'vue'
-import EssentialLink from 'components/EssentialLink.vue'
+import EssentialLink from 'src/components/layout/EssentialLink.vue'
 import useAuthUser from 'src/composables/UseAuthUser'
-import FooterComponent from 'components/FooterComponent.vue'
+import FooterComponent from 'src/components/layout/FooterComponent.vue'
 
 const { loading } = useAuthUser()
 

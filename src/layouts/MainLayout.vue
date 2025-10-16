@@ -180,9 +180,9 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import EssentialLink from 'components/EssentialLink.vue'
+import EssentialLink from 'src/components/layout/EssentialLink.vue'
 import useAuthUser from 'src/composables/UseAuthUser'
-import FooterComponent from 'components/FooterComponent.vue'
+import FooterComponent from 'src/components/layout/FooterComponent.vue'
 import { positiveNotify, negativeNotify } from 'src/composables/UseNotify'
 
 const { user, loading, logout } = useAuthUser()
