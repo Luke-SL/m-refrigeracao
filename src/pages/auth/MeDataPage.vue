@@ -1,5 +1,19 @@
 <template>
   <q-page class="flex flex-center bg-grey-2 q-pa-md">
+    <template>
+      <q-page class="flex flex-center bg-grey-2 q-pa-md">
+        <!-- Loading inicial -->
+        <div v-if="loadingProfile" class="text-center q-py-xl">
+          <q-spinner color="primary" size="50px" />
+          <div class="text-h6 text-grey-7 q-mt-md">Carregando dados...</div>
+        </div>
+
+        <!-- Conteúdo principal -->
+        <div v-else class="form-container">
+          <!-- ... resto do template ... -->
+        </div>
+      </q-page>
+    </template>
     <div class="form-container">
       <!-- Card de Dados Pessoais -->
       <div class="form-card">
@@ -462,17 +476,20 @@
 import { reactive, ref, onMounted } from 'vue'
 import { positiveNotify, negativeNotify } from 'src/composables/UseNotify'
 import useAuthUser from 'src/composables/UseAuthUser'
+import useUserProfile from 'src/composables/UseUserProfile'
 import useAdressUser from 'src/composables/useAdressUser'
 import { validarUpdateUsuario } from 'src/utils/validations/validarUpdateUsuario.js'
 import { validarEndereco } from 'src/utils/validations/validarEndereco.js'
 
 const { user, updatePessoaFisico, updatePessoaJuridica } = useAuthUser()
+const { profile, fetchProfile } = useUserProfile()
 const { addAdress, getAdress, updateAdress, deleteAdress } = useAdressUser()
 
 const loading = ref(false)
 const loadingAddress = ref(false)
 const loadingCep = ref(false)
 const loadingDelete = ref(false)
+const loadingProfile = ref(true)
 const confirmDialog = ref(false)
 const addressConfirmDialog = ref(false)
 const deleteDialog = ref(false)
@@ -484,15 +501,16 @@ const addressToDelete = ref(null)
 
 // Formulário de dados pessoais
 const form = reactive({
-  nome: user.value?.user_metadata.primeiro_nome || '',
-  sobrenome: user.value?.user_metadata.sobrenome || '',
-  tipoPessoa: user.value?.user_metadata.tipo_pessoa || '',
-  nomeFantasia: user.value?.user_metadata.nome_fantasia || '',
-  razaoSocial: user.value?.user_metadata.razao_social || '',
-  documento: user.value?.user_metadata.documento || '',
-  email: user.value?.email || 'usuario@email.com',
-  celular: user.value?.user_metadata.celular || '',
-  dataNascimento: user.value?.user_metadata.data_nascimento || '',
+  nome: '',
+  sobrenome: '',
+  tipoPessoa: '',
+  nomeFantasia: '',
+  razaoSocial: '',
+  inscricaoEstadual: '',
+  documento: '',
+  email: '',
+  celular: '',
+  dataNascimento: '',
 })
 
 // Formulário de endereço
@@ -562,12 +580,55 @@ const onTipoPessoaChange = () => {
   form.documento = ''
   form.nomeFantasia = ''
   form.razaoSocial = ''
+  form.inscricaoEstadual = ''
   form.dataNascimento = ''
 }
 
-// Carregar endereços ao montar o componente
+// Carregar perfil e endereços ao montar o componente
+// Carregar perfil e endereços ao montar o componente
 onMounted(async () => {
-  await loadAddresses()
+  loadingProfile.value = true
+  try {
+    console.log('🚀 Iniciando carregamento do perfil...')
+    console.log('👤 User atual:', user.value)
+
+    // Buscar perfil do usuário
+    await fetchProfile()
+
+    console.log('📦 Perfil carregado:', profile.value)
+
+    if (profile.value) {
+      // Preencher formulário com dados do perfil
+      form.nome = profile.value.nome || ''
+      form.sobrenome = profile.value.sobrenome || ''
+      form.tipoPessoa = profile.value.tipo_cliente === 'pessoa_fisica' ? 'fisica' : 'juridica'
+      form.documento = profile.value.cpf || profile.value.cnpj || ''
+      form.dataNascimento = profile.value.data_nascimento || ''
+      form.razaoSocial = profile.value.razao_social || ''
+      form.inscricaoEstadual = profile.value.inscricao_estadual || ''
+      form.celular = profile.value.celular || ''
+      form.email = user.value?.email || ''
+
+      console.log('✅ Formulário preenchido:')
+      console.log('  - Nome:', form.nome)
+      console.log('  - Sobrenome:', form.sobrenome)
+      console.log('  - TipoPessoa:', form.tipoPessoa)
+      console.log('  - Documento:', form.documento)
+      console.log('  - Celular:', form.celular)
+      console.log('  - Email:', form.email)
+    } else {
+      console.warn('⚠️ Perfil não encontrado!')
+    }
+
+    // Carregar endereços
+    await loadAddresses()
+  } catch (error) {
+    console.error('❌ Erro ao carregar dados:', error)
+    negativeNotify('Erro ao carregar dados do perfil')
+  } finally {
+    loadingProfile.value = false
+    console.log('🏁 Carregamento finalizado')
+  }
 })
 
 const loadAddresses = async () => {
@@ -705,15 +766,17 @@ const onSubmit = async () => {
         primeiro_nome: formValidado.nome,
         sobrenome: formValidado.sobrenome,
         tipo_pessoa: formValidado.tipoPessoa,
-        nome_fantasia: formValidado.nomeFantasia,
         razao_social: formValidado.razaoSocial,
+        inscricao_estadual: formValidado.inscricaoEstadual,
         documento: formValidado.documento,
         celular: formValidado.celular,
-        data_nascimento: null,
       })
     }
     positiveNotify('Dados atualizados com sucesso!')
     confirmDialog.value = false
+
+    // Recarregar perfil atualizado
+    await fetchProfile()
   } catch (error) {
     negativeNotify(error.message)
     confirmDialog.value = false

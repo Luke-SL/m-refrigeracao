@@ -1,3 +1,5 @@
+// src/utils/validations/validarFormulario.js
+
 const validarFormulario = async (form) => {
   // ---- Campos básicos ----
   if (!form.nome || typeof form.nome !== 'string')
@@ -10,6 +12,7 @@ const validarFormulario = async (form) => {
     return { isValid: false, message: 'Sobrenome inválido' }
   form.sobrenome = form.sobrenome.trim()
   if (form.sobrenome.length < 2) return { isValid: false, message: 'Sobrenome muito curto' }
+  if (form.sobrenome.length > 100) return { isValid: false, message: 'Sobrenome muito longo' }
 
   // ---- Tipo de pessoa ----
   if (!form.tipoPessoa || !['fisica', 'juridica'].includes(form.tipoPessoa.toLowerCase()))
@@ -18,6 +21,11 @@ const validarFormulario = async (form) => {
   // ---- Pessoa Física ----
   if (form.tipoPessoa === 'fisica') {
     if (!form.dataNascimento) return { isValid: false, message: 'Data de nascimento é obrigatória' }
+
+    const data = new Date(form.dataNascimento)
+    if (isNaN(data.getTime())) return { isValid: false, message: 'Data de nascimento inválida' }
+    if (data >= new Date())
+      return { isValid: false, message: 'Data de nascimento deve ser no passado' }
   }
 
   // ---- Pessoa Jurídica ----
@@ -25,8 +33,12 @@ const validarFormulario = async (form) => {
     if (!form.nomeFantasia?.trim())
       return { isValid: false, message: 'Nome fantasia é obrigatório' }
     if (!form.razaoSocial?.trim()) return { isValid: false, message: 'Razão social é obrigatória' }
+    if (!form.inscricaoEstadual?.trim())
+      return { isValid: false, message: 'Inscrição estadual é obrigatória' }
+
     form.nomeFantasia = form.nomeFantasia.trim()
     form.razaoSocial = form.razaoSocial.trim()
+    form.inscricaoEstadual = form.inscricaoEstadual.trim()
   }
 
   // ---- Documento ----
@@ -49,18 +61,20 @@ const validarFormulario = async (form) => {
 
   // ---- Email ----
   if (!form.email) return { isValid: false, message: 'E-mail é obrigatório' }
-  form.email = form.email.trim()
+  form.email = form.email.trim().toLowerCase()
   if (!/.+@.+\..+/.test(form.email)) return { isValid: false, message: 'E-mail inválido' }
 
   // ---- Senha ----
   if (!form.senha) return { isValid: false, message: 'Senha é obrigatória' }
   if (form.senha.length < 8)
     return { isValid: false, message: 'Senha deve ter pelo menos 8 caracteres' }
+  if (form.senha !== form.senha.trim())
+    return { isValid: false, message: 'Senha não pode ter espaços no início ou fim' }
   if (form.senha !== form.confirmacaoSenha)
     return { isValid: false, message: 'Senhas não conferem' }
 
   // ---- Normalização final ----
-  form.confirmacaoSenha = undefined // não enviar para API
+  delete form.confirmacaoSenha
 
   return { isValid: true, form }
 }

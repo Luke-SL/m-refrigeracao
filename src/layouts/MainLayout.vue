@@ -63,62 +63,87 @@
                 <q-icon name="mdi-magnify" @click="search_text = ''" class="cursor-pointer" />
               </template>
             </q-input>
+
+            <!-- Area do usuário -->
             <div class="q-ml-sm">
-              <div v-if="loading == true"><q-spinner /> LOADING...</div>
-
-              <div v-else-if="loading == false && !!user == true">
-                <div class>
-                  <q-btn-dropdown
-                    flat
-                    dense
-                    icon="mdi-account"
-                    :label="'Olá, ' + $auth.user.value.user_metadata.primeiro_nome"
-                  >
-                    <q-list>
-                      <q-item clickable v-close-popup @click="$router.push('/auth/minha-pagina')">
-                        <q-item-section avatar>
-                          <q-avatar
-                            icon="mdi-account-arrow-left-outline"
-                            color="primary"
-                            text-color="white"
-                          />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Minha Conta</q-item-label>
-                        </q-item-section>
-                      </q-item>
-
-                      <q-item clickable v-close-popup @click="handleLogout">
-                        <q-item-section avatar>
-                          <q-avatar icon="mdi-logout" color="red" text-color="white" />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Sair</q-item-label>
-                        </q-item-section>
-                      </q-item>
-                    </q-list>
-                  </q-btn-dropdown>
-                </div>
+              <!-- Loading state -->
+              <div v-if="loading || loadingProfile" class="row items-center q-gutter-sm">
+                <q-spinner size="24px" color="white" />
+                <span class="text-white">Carregando...</span>
               </div>
 
+              <!-- Usuário logado -->
+              <div v-else-if="user && profile">
+                <q-btn-dropdown
+                  flat
+                  dense
+                  icon="mdi-account"
+                  :label="`Olá, ${profile.nome}`"
+                  text-color="white"
+                >
+                  <q-list>
+                    <q-item clickable v-close-popup @click="$router.push('/auth/minha-pagina')">
+                      <q-item-section avatar>
+                        <q-avatar
+                          :style="{ backgroundColor: profile.avatar_cor || '#4A90E2' }"
+                          text-color="white"
+                        >
+                          {{ profile.nome.charAt(0).toUpperCase() }}
+                        </q-avatar>
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label>{{ nomeCompleto }}</q-item-label>
+                        <q-item-label caption>{{ user.email }}</q-item-label>
+                      </q-item-section>
+                    </q-item>
+
+                    <q-separator />
+
+                    <q-item clickable v-close-popup @click="$router.push('/auth/minha-pagina')">
+                      <q-item-section avatar>
+                        <q-avatar
+                          icon="mdi-account-arrow-left-outline"
+                          color="primary"
+                          text-color="white"
+                        />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label>Minha Conta</q-item-label>
+                      </q-item-section>
+                    </q-item>
+
+                    <q-item clickable v-close-popup @click="$router.push('/auth/meus-dados')">
+                      <q-item-section avatar>
+                        <q-avatar icon="mdi-pencil" color="blue" text-color="white" />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label>Editar Perfil</q-item-label>
+                      </q-item-section>
+                    </q-item>
+
+                    <q-separator />
+
+                    <q-item clickable v-close-popup @click="handleLogout">
+                      <q-item-section avatar>
+                        <q-avatar icon="mdi-logout" color="red" text-color="white" />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label>Sair</q-item-label>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-btn-dropdown>
+              </div>
+
+              <!-- Usuário não logado -->
               <div v-else>
                 <q-btn flat to="/login" color="white">Entrar</q-btn>
               </div>
-            </div>
-
-            <!-- Loading state -->
-            <div v-if="loading.value" class="row items-center q-gutter-sm">
-              <q-spinner size="24px" color="white" />
-              <span class="text-white">Carregando...</span>
             </div>
           </div>
 
           <!-- Usuário + Ícones -->
           <div class="col-auto row items-center q-gutter-sm justify-end">
-            <!-- Loading -->
-            <!-- Exibe enquanto carrega -->
-
-            <!-- Ícones finais -->
             <q-btn
               flat
               round
@@ -178,39 +203,61 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import EssentialLink from 'src/components/layout/EssentialLink.vue'
 import useAuthUser from 'src/composables/UseAuthUser'
+import useUserProfile from 'src/composables/UseUserProfile'
 import FooterComponent from 'src/components/layout/FooterComponent.vue'
 import { positiveNotify, negativeNotify } from 'src/composables/UseNotify'
 
 const { user, loading, logout } = useAuthUser()
+const { profile, loadingProfile, nomeCompleto, fetchProfile, clearProfile } = useUserProfile()
+
 const router = useRouter()
+const search_text = ref('')
+const leftDrawerOpen = ref(false)
+
+// Buscar perfil quando usuário logar
+watch(
+  () => user.value,
+  async (newUser) => {
+    if (newUser) {
+      await fetchProfile()
+    } else {
+      clearProfile()
+    }
+  },
+  { immediate: true },
+)
+
+// Buscar perfil na montagem (caso já esteja logado)
+onMounted(async () => {
+  if (user.value) {
+    await fetchProfile()
+  }
+})
 
 const handleLogout = async () => {
   try {
     await logout()
     positiveNotify('Sessão encerrada com sucesso!')
-    router.go(0)
+    router.push({ name: 'indexDefault' })
   } catch (error) {
     negativeNotify(error.message)
   }
 }
-
-const search_text = ref('')
-const leftDrawerOpen = ref(false)
 </script>
 
 <style lang="sass" scoped>
 .whatsapp-sticky
-  z-index: 1 !important;
+  z-index: 1 !important
 
 .logo-link
   height: 96px
   width: 256px
-  text-decoration: none;
-  display: inline-block;
+  text-decoration: none
+  display: inline-block
 
 .central-input
   max-width: 450px

@@ -12,7 +12,7 @@
       <q-card-section>
         <q-form @submit.prevent="onSubmit" class="q-gutter-md">
           <!-- Nome / Sobrenome -->
-          <div class="row q-gutter-sm" :class="$q.screen.lt.md ? 'col-12' : ''">
+          <div class="row q-gutter-sm">
             <q-input
               v-model="form.nome"
               label="Nome *"
@@ -50,7 +50,7 @@
             />
           </div>
 
-          <!-- Campos PJ -->
+          <!-- Campos PJ: Nome Fantasia e Razão Social -->
           <div v-if="form.tipoPessoa === 'juridica'" class="row q-gutter-sm">
             <q-input
               v-model="form.nomeFantasia"
@@ -68,7 +68,18 @@
             />
           </div>
 
-          <!-- Documento -->
+          <!-- Campo PJ: Inscrição Estadual -->
+          <div v-if="form.tipoPessoa === 'juridica'" class="row q-gutter-sm">
+            <q-input
+              v-model="form.inscricaoEstadual"
+              label="Inscrição Estadual *"
+              outlined
+              :class="$q.screen.lt.md ? 'col-12' : 'col'"
+              :rules="[(val) => !!val || 'Inscrição estadual é obrigatória']"
+            />
+          </div>
+
+          <!-- Documento (CPF ou CNPJ) -->
           <div class="row q-gutter-sm">
             <q-input
               v-model="form.documento"
@@ -81,8 +92,8 @@
             />
           </div>
 
-          <!-- Campo Data de Nascimento usando input nativo -->
-          <div v-if="form.tipoPessoa === 'fisica' || !form.tipoPessoa" class="row q-gutter-sm">
+          <!-- Data de Nascimento (apenas PF) -->
+          <div v-if="form.tipoPessoa === 'fisica'" class="row q-gutter-sm">
             <q-input
               v-model="form.dataNascimento"
               type="date"
@@ -126,7 +137,7 @@
           </div>
 
           <!-- Senha / Confirmação -->
-          <div class="row q-gutter-sm" :class="$q.screen.lt.md ? 'col-12' : ''">
+          <div class="row q-gutter-sm">
             <q-input
               v-model="form.senha"
               :type="showPassword ? 'text' : 'password'"
@@ -162,7 +173,7 @@
             </q-input>
           </div>
 
-          <!-- Container para centralizar o botão -->
+          <!-- Botão Registrar -->
           <div class="flex flex-center q-mt-lg">
             <q-btn
               type="submit"
@@ -199,7 +210,7 @@ const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const router = useRouter()
 
-const { registerPessoaFisica, registerPessoaJuridica } = UseAuthUser()
+const { register } = UseAuthUser()
 
 const form = reactive({
   nome: '',
@@ -207,10 +218,11 @@ const form = reactive({
   tipoPessoa: 'fisica',
   nomeFantasia: '',
   razaoSocial: '',
+  inscricaoEstadual: '',
   documento: '',
   email: '',
   celular: '',
-  dataNascimento: '', // novo campo
+  dataNascimento: '',
   senha: '',
   confirmacaoSenha: '',
 })
@@ -225,15 +237,18 @@ const emailRules = [
   (val) => val?.trim() === val || 'E-mail não pode ter espaços no início ou fim',
   (val) => /.+@.+\..+/.test(val) || 'E-mail inválido',
 ]
+
 const senhaRules = [
   (val) => !!val || 'Senha é obrigatória',
   (val) => val.length >= 8 || 'Senha deve ter pelo menos 8 caracteres',
   (val) => val === val.trim() || 'Senha não pode ter espaços no início ou fim',
 ]
+
 const confirmacaoSenhaRules = [
   (val) => !!val || 'Confirmação de senha é obrigatória',
   (val) => val === form.senha || 'Senhas não conferem',
 ]
+
 const documentoRules = [
   (val) => !!val || (form.tipoPessoa === 'juridica' ? 'CNPJ é obrigatório' : 'CPF é obrigatório'),
   (val) => {
@@ -250,6 +265,8 @@ const onTipoPessoaChange = () => {
   form.documento = ''
   form.nomeFantasia = ''
   form.razaoSocial = ''
+  form.inscricaoEstadual = ''
+  form.dataNascimento = ''
 }
 
 const onSubmit = async () => {
@@ -258,16 +275,14 @@ const onSubmit = async () => {
     negativeNotify(message)
     return
   }
+
   loading.value = true
   try {
-    if (formValidado.tipoPessoa === 'fisica') {
-      await registerPessoaFisica(formValidado)
-    } else {
-      await registerPessoaJuridica(formValidado)
-    }
-    positiveNotify('Cadastro realizado com sucesso!')
+    await register(formValidado)
+    positiveNotify('Cadastro realizado com sucesso! Verifique seu e-mail.')
     router.push({ name: 'email-confirmation', query: { email: formValidado.email } })
   } catch (error) {
+    console.error('Erro no registro:', error)
     negativeNotify(error.message || 'Erro ao cadastrar usuário.')
   } finally {
     loading.value = false

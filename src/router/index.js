@@ -45,8 +45,21 @@ export default defineRouter(function (/* { store, ssrContext } */) {
       return { name: 'reset-password', query: { token } }
     }
 
+    // ⬇️ ADICIONAR: Handle email confirmation
+    if (to.hash.includes('type=signup') || to.hash.includes('access_token')) {
+      // Se está indo para email-confirmation, deixar passar
+      if (to.name === 'email-confirmation') {
+        return true
+      }
+      // Se não, redirecionar para email-confirmation
+      return {
+        name: 'email-confirmation',
+        query: to.query,
+        hash: to.hash,
+      }
+    }
+
     // Check authentication for protected routes
-    // ✅ Correção: usar .value ao invés de () para acessar o computed
     if (!isLoggedIn.value && to.meta.requiresAuth && !Object.keys(to.query).includes('fromEmail')) {
       return { name: 'loginDefault' }
     }

@@ -1,3 +1,5 @@
+// src/utils/validations/validarUpdateUsuario.js
+
 const validarUpdateUsuario = async (form) => {
   // Normaliza os dados
   const formValidado = { ...form }
@@ -57,24 +59,26 @@ const validarUpdateUsuario = async (form) => {
     formValidado.dataNascimento = null
   }
 
-  // Celular (remove máscara)
-  if (typeof formValidado.celular !== 'string') {
-    return { isValid: false, message: 'Celular inválido' }
+  // Celular (remove máscara) - OBRIGATÓRIO
+  if (!formValidado.celular || typeof formValidado.celular !== 'string') {
+    return { isValid: false, message: 'Celular é obrigatório' }
   }
   const celularLimpo = formValidado.celular.replace(/\D/g, '')
-  if (celularLimpo.length < 10 || celularLimpo.length > 11) {
-    return { isValid: false, message: 'Celular deve conter 10 ou 11 dígitos' }
+  if (celularLimpo.length !== 11) {
+    return { isValid: false, message: 'Celular deve conter 11 dígitos' }
   }
   formValidado.celular = celularLimpo
 
-  // Nome Fantasia e Razão Social (somente PJ)
+  // Inscrição Estadual e Razão Social (somente PJ)
   if (formValidado.tipoPessoa === 'juridica') {
-    if (!formValidado.nomeFantasia || formValidado.nomeFantasia.trim().length < 2) {
-      return { isValid: false, message: 'Nome Fantasia é obrigatório' }
-    }
     if (!formValidado.razaoSocial || formValidado.razaoSocial.trim().length < 2) {
       return { isValid: false, message: 'Razão Social é obrigatória' }
     }
+    if (!formValidado.inscricaoEstadual || formValidado.inscricaoEstadual.trim().length < 2) {
+      return { isValid: false, message: 'Inscrição Estadual é obrigatória' }
+    }
+    formValidado.razaoSocial = formValidado.razaoSocial.trim()
+    formValidado.inscricaoEstadual = formValidado.inscricaoEstadual.trim()
   }
 
   return { isValid: true, form: formValidado }
