@@ -1,4 +1,5 @@
 <template>
+  <AuthGuard />
   <q-layout view="lHh Lpr lFf">
     <!-- Header -->
     <q-header elevated>
@@ -137,7 +138,7 @@
 
               <!-- Usuário não logado -->
               <div v-else>
-                <q-btn flat to="/login" color="white">Entrar</q-btn>
+                <q-btn flat :to="{ name: 'loginDefault' }" color="white">Entrar</q-btn>
               </div>
             </div>
           </div>
@@ -210,6 +211,7 @@ import useAuthUser from 'src/composables/UseAuthUser'
 import useUserProfile from 'src/composables/UseUserProfile'
 import FooterComponent from 'src/components/layout/FooterComponent.vue'
 import { positiveNotify, negativeNotify } from 'src/composables/UseNotify'
+import AuthGuard from 'src/components/AuthGuard.vue'
 
 const { user, loading, logout } = useAuthUser()
 const { profile, loadingProfile, nomeCompleto, fetchProfile, clearProfile } = useUserProfile()

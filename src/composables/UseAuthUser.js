@@ -29,13 +29,19 @@ export default function useAuthUser() {
         .select('cargo')
         .eq('usuario_id', userId)
         .eq('ativo', true)
-        .single()
+        .maybeSingle() // ✅ Mudança aqui: use maybeSingle() ao invés de single()
 
-      if (!error && data) {
-        cargo.value = data.cargo
-      } else {
+      if (error) {
+        // Só logar erros que NÃO sejam "não encontrado"
+        if (error.code !== 'PGRST116') {
+          console.error('Erro ao buscar cargo:', error)
+        }
         cargo.value = null
+        return
       }
+
+      // Se encontrou dados, atribui o cargo
+      cargo.value = data?.cargo || null
     } catch (error) {
       console.error('Erro ao buscar cargo:', error)
       cargo.value = null
@@ -49,6 +55,7 @@ export default function useAuthUser() {
       const {
         data: { user: currentUser },
       } = await supabase.auth.getUser()
+
       user.value = currentUser
 
       if (currentUser) {
@@ -72,6 +79,21 @@ export default function useAuthUser() {
       authInitialized = true
     } catch (error) {
       console.error('Erro na inicialização:', error)
+
+      // Se erro 403 ou usuário inválido, limpar sessão
+      if (error?.status === 403 || error?.message?.includes('invalid')) {
+        console.warn('⚠️ Sessão inválida detectada. Limpando...')
+
+        // Limpar tokens do Supabase
+        Object.keys(localStorage).forEach((key) => {
+          if (key.startsWith('sb-')) {
+            localStorage.removeItem(key)
+          }
+        })
+
+        user.value = null
+        cargo.value = null
+      }
     } finally {
       loading.value = false
     }
@@ -112,12 +134,8 @@ export default function useAuthUser() {
 
   /**
    * NOVA FUNÇÃO UNIFICADA DE REGISTRO
-   * Segura: não expõe dados sensíveis no JWT
+   * Atualizada para trabalhar com telefone_usuario
    */
-  // src/composables/UseAuthUser.js
-
-  // src/composables/UseAuthUser.js
-
   const register = async (form) => {
     try {
       // 1. Criar usuário no Auth
@@ -134,7 +152,7 @@ export default function useAuthUser() {
 
       console.log('✅ Usuário criado no Auth:', authData.user.id)
 
-      // 2. Preparar parâmetros para a function
+      // 2. Preparar parâmetros para a function (SEM celular)
       const params = {
         p_id: authData.user.id,
         p_nome: form.nome,
@@ -145,7 +163,6 @@ export default function useAuthUser() {
         p_data_nascimento: form.tipoPessoa === 'fisica' ? form.dataNascimento : null,
         p_razao_social: form.tipoPessoa === 'juridica' ? form.razaoSocial : null,
         p_inscricao_estadual: form.tipoPessoa === 'juridica' ? form.inscricaoEstadual : null,
-        p_celular: form.celular || null, // ⬅️ ADICIONAR CELULAR
       }
 
       console.log('📦 Chamando function create_perfil_usuario:', params)
@@ -162,6 +179,29 @@ export default function useAuthUser() {
       }
 
       console.log('✅ Perfil criado com sucesso:', profileData)
+
+      // 4. Adicionar telefone se fornecido
+      if (form.celular) {
+        const celularLimpo = form.celular.replace(/\D/g, '')
+        const ddd = celularLimpo.substring(0, 2)
+        const numero = celularLimpo.substring(2)
+
+        const { error: telefoneError } = await supabase.from('telefone_usuario').insert({
+          usuario_id: authData.user.id,
+          ddd: ddd,
+          numero: numero,
+          tipo: 'celular',
+          principal: true,
+          verificado: false,
+        })
+
+        if (telefoneError) {
+          console.error('⚠️ Erro ao adicionar telefone:', telefoneError)
+          // Não lançar erro, apenas avisar
+        } else {
+          console.log('✅ Telefone cadastrado com sucesso')
+        }
+      }
 
       return authData.user
     } catch (error) {
@@ -204,6 +244,7 @@ export default function useAuthUser() {
 
   /**
    * Atualiza perfil de Pessoa Física
+   * Atualizado para trabalhar com telefone_usuario
    */
   const updatePessoaFisico = async (form) => {
     try {
@@ -218,13 +259,12 @@ export default function useAuthUser() {
         if (emailError) throw emailError
       }
 
-      // 2. Atualizar dados no perfil_usuario
+      // 2. Atualizar dados no perfil_usuario (SEM celular)
       const updateData = {
         nome: form.primeiro_nome || form.nome,
         sobrenome: form.sobrenome,
         cpf: form.documento,
         data_nascimento: form.data_nascimento,
-        celular: form.celular || null, // ⬅️ ADICIONAR CELULAR
         tipo_cliente: 'pessoa_fisica',
         // Limpar campos de PJ
         cnpj: null,
@@ -241,7 +281,12 @@ export default function useAuthUser() {
 
       if (error) throw error
 
-      // 3. Atualizar user state local
+      // 3. Atualizar telefone se fornecido
+      if (form.celular) {
+        await updateTelefonePrincipal(currentUser.id, form.celular)
+      }
+
+      // 4. Atualizar user state local
       await refreshUser()
 
       return data
@@ -253,6 +298,7 @@ export default function useAuthUser() {
 
   /**
    * Atualiza perfil de Pessoa Jurídica
+   * Atualizado para trabalhar com telefone_usuario
    */
   const updatePessoaJuridica = async (form) => {
     try {
@@ -267,14 +313,13 @@ export default function useAuthUser() {
         if (emailError) throw emailError
       }
 
-      // 2. Atualizar dados no perfil_usuario
+      // 2. Atualizar dados no perfil_usuario (SEM celular)
       const updateData = {
         nome: form.primeiro_nome || form.nome,
         sobrenome: form.sobrenome,
         cnpj: form.documento,
         razao_social: form.razao_social,
         inscricao_estadual: form.inscricao_estadual,
-        celular: form.celular || null, // ⬅️ ADICIONAR CELULAR
         tipo_cliente: 'pessoa_juridica',
         // Limpar campos de PF
         cpf: null,
@@ -290,7 +335,12 @@ export default function useAuthUser() {
 
       if (error) throw error
 
-      // 3. Atualizar user state local
+      // 3. Atualizar telefone se fornecido
+      if (form.celular) {
+        await updateTelefonePrincipal(currentUser.id, form.celular)
+      }
+
+      // 4. Atualizar user state local
       await refreshUser()
 
       return data
@@ -301,11 +351,62 @@ export default function useAuthUser() {
   }
 
   /**
+   * Atualiza ou cria telefone principal do usuário
+   */
+  const updateTelefonePrincipal = async (usuarioId, celular) => {
+    try {
+      const celularLimpo = celular.replace(/\D/g, '')
+      const ddd = celularLimpo.substring(0, 2)
+      const numero = celularLimpo.substring(2)
+
+      // Buscar telefone principal existente
+      const { data: telefoneExistente } = await supabase
+        .from('telefone_usuario')
+        .select('*')
+        .eq('usuario_id', usuarioId)
+        .eq('principal', true)
+        .single()
+
+      if (telefoneExistente) {
+        // Atualizar telefone existente
+        const { error } = await supabase
+          .from('telefone_usuario')
+          .update({
+            ddd: ddd,
+            numero: numero,
+            tipo: 'celular',
+          })
+          .eq('id', telefoneExistente.id)
+
+        if (error) throw error
+      } else {
+        // Criar novo telefone
+        const { error } = await supabase.from('telefone_usuario').insert({
+          usuario_id: usuarioId,
+          ddd: ddd,
+          numero: numero,
+          tipo: 'celular',
+          principal: true,
+          verificado: false,
+        })
+
+        if (error) throw error
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar telefone:', error)
+      throw error
+    }
+  }
+
+  /**
    * Obtém o perfil completo do usuário atual
    */
   const getUserProfile = async () => {
     const currentUser = user.value
-    if (!currentUser) return null
+    if (!currentUser) {
+      console.warn('getUserProfile: Usuário não autenticado')
+      return null
+    }
 
     try {
       const { data, error } = await supabase
@@ -314,10 +415,20 @@ export default function useAuthUser() {
         .eq('id', currentUser.id)
         .single()
 
-      if (error) throw error
+      // PGRST116 = nenhum resultado encontrado (não é erro crítico)
+      if (error && error.code === 'PGRST116') {
+        console.warn('getUserProfile: Perfil não encontrado para usuário:', currentUser.id)
+        return null
+      }
+
+      if (error) {
+        console.error('getUserProfile: Erro ao buscar perfil:', error)
+        throw error
+      }
+
       return data
     } catch (error) {
-      console.error('Erro ao buscar perfil:', error)
+      console.error('getUserProfile: Erro ao buscar perfil:', error)
       return null
     }
   }
@@ -391,10 +502,11 @@ export default function useAuthUser() {
     registerPessoaJuridica, // Mantido para compatibilidade (deprecated)
     sendPasswordResetEmail,
     resetPassword,
-    updatePessoaFisico, // ✅ Atualizado para usar perfil_usuario
-    updatePessoaJuridica, // ✅ Atualizado para usar perfil_usuario
+    updatePessoaFisico, // ✅ Atualizado para usar telefone_usuario
+    updatePessoaJuridica, // ✅ Atualizado para usar telefone_usuario
     getUserProfile, // ✅ Nova função
     updateProfile, // ✅ Nova função
+    updateTelefonePrincipal, // ✅ Nova função
     hasCargo,
     hasAnyCargo,
     getUserCargo,

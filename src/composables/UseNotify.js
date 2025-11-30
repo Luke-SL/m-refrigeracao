@@ -7,7 +7,7 @@ const positiveNotify = (message) => {
     color: 'positive', // cores padrão: positive, negative, warning, info
     textColor: 'white', // cor do texto
     icon: 'check_circle', // pode usar ícones do material ou fontawesome
-    position: 'top', // top, top-right, bottom, etc
+    position: 'bottom', // top, top-right, bottom, etc
     timeout: 3000, // tempo em ms (3s)
   })
 }
@@ -18,7 +18,7 @@ const negativeNotify = (message) => {
     color: 'negative',
     textColor: 'white',
     icon: 'error',
-    position: 'top',
+    position: 'bottom',
     timeout: 4000,
   })
 }
@@ -29,7 +29,7 @@ const warningNotify = (message) => {
     color: 'warning',
     textColor: 'black',
     icon: 'warning',
-    position: 'top',
+    position: 'bottom',
   })
 }
 

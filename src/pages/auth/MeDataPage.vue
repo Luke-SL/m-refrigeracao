@@ -1,20 +1,13 @@
 <template>
   <q-page class="flex flex-center bg-grey-2 q-pa-md">
-    <template>
-      <q-page class="flex flex-center bg-grey-2 q-pa-md">
-        <!-- Loading inicial -->
-        <div v-if="loadingProfile" class="text-center q-py-xl">
-          <q-spinner color="primary" size="50px" />
-          <div class="text-h6 text-grey-7 q-mt-md">Carregando dados...</div>
-        </div>
+    <!-- Loading inicial -->
+    <div v-if="loadingProfile" class="text-center q-py-xl">
+      <q-spinner color="primary" size="50px" />
+      <div class="text-h6 text-grey-7 q-mt-md">Carregando dados...</div>
+    </div>
 
-        <!-- Conteúdo principal -->
-        <div v-else class="form-container">
-          <!-- ... resto do template ... -->
-        </div>
-      </q-page>
-    </template>
-    <div class="form-container">
+    <!-- Conteúdo principal -->
+    <div v-else class="form-container">
       <!-- Card de Dados Pessoais -->
       <div class="form-card">
         <q-card class="q-pa-lg shadow-2 rounded-borders update-card">
@@ -482,7 +475,7 @@ import { validarUpdateUsuario } from 'src/utils/validations/validarUpdateUsuario
 import { validarEndereco } from 'src/utils/validations/validarEndereco.js'
 
 const { user, updatePessoaFisico, updatePessoaJuridica } = useAuthUser()
-const { profile, fetchProfile } = useUserProfile()
+const { profile, telefonePrincipal, fetchProfile } = useUserProfile()
 const { addAdress, getAdress, updateAdress, deleteAdress } = useAdressUser()
 
 const loading = ref(false)
@@ -585,7 +578,6 @@ const onTipoPessoaChange = () => {
 }
 
 // Carregar perfil e endereços ao montar o componente
-// Carregar perfil e endereços ao montar o componente
 onMounted(async () => {
   loadingProfile.value = true
   try {
@@ -596,6 +588,7 @@ onMounted(async () => {
     await fetchProfile()
 
     console.log('📦 Perfil carregado:', profile.value)
+    console.log('📞 Telefone principal:', telefonePrincipal.value)
 
     if (profile.value) {
       // Preencher formulário com dados do perfil
@@ -606,8 +599,12 @@ onMounted(async () => {
       form.dataNascimento = profile.value.data_nascimento || ''
       form.razaoSocial = profile.value.razao_social || ''
       form.inscricaoEstadual = profile.value.inscricao_estadual || ''
-      form.celular = profile.value.celular || ''
       form.email = user.value?.email || ''
+
+      // Preencher telefone principal
+      if (telefonePrincipal.value) {
+        form.celular = `${telefonePrincipal.value.ddd}${telefonePrincipal.value.numero}`
+      }
 
       console.log('✅ Formulário preenchido:')
       console.log('  - Nome:', form.nome)

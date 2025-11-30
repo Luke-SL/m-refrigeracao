@@ -128,27 +128,29 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { positiveNotify, negativeNotify } from 'src/composables/UseNotify'
 import useAuthUser from 'src/composables/UseAuthUser'
+import useUserProfile from 'src/composables/UseUserProfile'
 import ConfirmUpdateDialog from './ConfirmUpdateDialog.vue'
 
 const { user, updatePessoaFisico, updatePessoaJuridica } = useAuthUser()
+const { profile, telefonePrincipal, fetchProfile } = useUserProfile()
 
 const loading = ref(false)
 const confirmDialog = ref(false)
 const formRef = ref(null)
 
 const form = reactive({
-  nome: user.value?.user_metadata?.primeiro_nome || '',
-  sobrenome: user.value?.user_metadata?.sobrenome || '',
-  tipoPessoa: user.value?.user_metadata?.tipo_pessoa || '',
-  nomeFantasia: user.value?.user_metadata?.nome_fantasia || '',
-  razaoSocial: user.value?.user_metadata?.razao_social || '',
-  documento: user.value?.user_metadata?.documento || '',
-  email: user.value?.email || '',
-  celular: user.value?.user_metadata?.celular || '',
-  dataNascimento: user.value?.user_metadata?.data_nascimento || '',
+  nome: '',
+  sobrenome: '',
+  tipoPessoa: '',
+  nomeFantasia: '',
+  razaoSocial: '',
+  documento: '',
+  email: '',
+  celular: '',
+  dataNascimento: '',
 })
 
 const tiposPessoa = [
@@ -173,6 +175,31 @@ const onTipoPessoaChange = () => {
   form.razaoSocial = ''
   form.dataNascimento = ''
 }
+
+// Carregar dados ao montar o componente
+onMounted(async () => {
+  try {
+    await fetchProfile()
+
+    if (profile.value) {
+      form.nome = profile.value.nome || ''
+      form.sobrenome = profile.value.sobrenome || ''
+      form.tipoPessoa = profile.value.tipo_cliente === 'pessoa_fisica' ? 'fisica' : 'juridica'
+      form.documento = profile.value.cpf || profile.value.cnpj || ''
+      form.dataNascimento = profile.value.data_nascimento || ''
+      form.razaoSocial = profile.value.razao_social || ''
+      form.email = user.value?.email || ''
+    }
+
+    // Buscar telefone principal
+    if (telefonePrincipal.value) {
+      form.celular = `${telefonePrincipal.value.ddd}${telefonePrincipal.value.numero}`
+    }
+  } catch (error) {
+    console.error('Erro ao carregar dados:', error)
+    negativeNotify('Erro ao carregar dados do perfil')
+  }
+})
 
 const showConfirmDialog = async () => {
   const valid = await formRef.value.validate()
@@ -199,7 +226,6 @@ const onSubmit = async () => {
         primeiro_nome: form.nome,
         sobrenome: form.sobrenome,
         tipo_pessoa: form.tipoPessoa,
-        nome_fantasia: form.nomeFantasia,
         razao_social: form.razaoSocial,
         documento: form.documento,
         celular: form.celular,
@@ -208,6 +234,9 @@ const onSubmit = async () => {
     }
     positiveNotify('Dados atualizados com sucesso!')
     confirmDialog.value = false
+
+    // Recarregar perfil atualizado
+    await fetchProfile()
   } catch (error) {
     console.error('Erro ao atualizar dados:', error)
     negativeNotify(error.message || 'Erro ao atualizar dados')

@@ -1,5 +1,6 @@
 <template>
   <q-page class="bg-grey-2 q-pa-md">
+    <!-- Painel Administrativo (só aparece se for admin) -->
     <div v-if="isAdmin" class="q-mb-xl">
       <div class="text-h5 text-bold text-center q-mb-lg">Painel Administrativo</div>
       <div class="row q-col-gutter-md q-mb-xl">
@@ -26,6 +27,7 @@
       </div>
     </div>
 
+    <!-- Minha Conta (sempre aparece) -->
     <div class="text-h5 text-bold text-center q-mb-lg">Minha Conta</div>
 
     <div class="row q-col-gutter-md">
@@ -95,11 +97,27 @@
         />
       </div>
     </div>
+
+    <!-- Debug info (remover em produção) -->
+    <div v-if="showDebug" class="q-mt-xl q-pa-md bg-grey-3 rounded-borders">
+      <div class="text-caption text-grey-8">
+        Debug Info:
+        <ul>
+          <li>isAdmin: {{ isAdmin }}</li>
+          <li>cargo: {{ cargo || 'null' }}</li>
+          <li>loading: {{ loading }}</li>
+        </ul>
+      </div>
+    </div>
   </q-page>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import useAuthUser from 'src/composables/UseAuthUser'
 
-const { isAdmin } = useAuthUser()
+const { isAdmin, cargo, loading } = useAuthUser()
+
+// Ativar debug se necessário (remover em produção)
+const showDebug = ref(false) // Mude para true para ver info de debug
 </script>

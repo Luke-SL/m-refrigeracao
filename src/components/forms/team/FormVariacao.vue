@@ -120,58 +120,6 @@
           </div>
         </div>
 
-        <div class="text-h6 q-mt-md q-mb-sm">Dimensões e Peso</div>
-        <div class="row q-col-gutter-md">
-          <div class="col-12 col-md-6">
-            <q-input
-              v-model="variacao.pesoLiquido"
-              label="Peso Líquido (kg) *"
-              outlined
-              @update:model-value="(val) => (variacao.pesoLiquido = normalizeDecimal(val))"
-              :rules="[(val) => !!val || 'Campo obrigatório']"
-            />
-          </div>
-          <div class="col-12 col-md-6">
-            <q-input
-              v-model="variacao.pesoBruto"
-              label="Peso Bruto (kg) *"
-              outlined
-              @update:model-value="(val) => (variacao.pesoBruto = normalizeDecimal(val))"
-              :rules="[(val) => !!val || 'Campo obrigatório']"
-            />
-          </div>
-        </div>
-
-        <div class="row q-col-gutter-md">
-          <div class="col-12 col-md-4">
-            <q-input
-              v-model="variacao.altura"
-              label="Altura (cm) *"
-              outlined
-              @update:model-value="(val) => (variacao.altura = normalizeDecimal(val))"
-              :rules="[(val) => !!val || 'Campo obrigatório']"
-            />
-          </div>
-          <div class="col-12 col-md-4">
-            <q-input
-              v-model="variacao.largura"
-              label="Largura (cm) *"
-              outlined
-              @update:model-value="(val) => (variacao.largura = normalizeDecimal(val))"
-              :rules="[(val) => !!val || 'Campo obrigatório']"
-            />
-          </div>
-          <div class="col-12 col-md-4">
-            <q-input
-              v-model="variacao.profundidade"
-              label="Profundidade (cm) *"
-              outlined
-              @update:model-value="(val) => (variacao.profundidade = normalizeDecimal(val))"
-              :rules="[(val) => !!val || 'Campo obrigatório']"
-            />
-          </div>
-        </div>
-
         <div class="text-h6 q-mt-md q-mb-sm">Ficha Técnica</div>
         <div
           v-for="(item, index) in variacao.fichaTecnica"
@@ -234,11 +182,7 @@ export default {
       descontoVista: 0,
       garantia: null,
       estoque: null,
-      pesoLiquido: '',
-      pesoBruto: '',
-      altura: '',
-      largura: '',
-      profundidade: '',
+
       fichaTecnica: [],
     })
 
@@ -283,11 +227,7 @@ export default {
           desconto_a_vista: variacao.value.descontoVista || 0,
           garantia: variacao.value.garantia,
           estoque: variacao.value.estoque,
-          peso_liquido: variacao.value.pesoLiquido,
-          peso_bruto: variacao.value.pesoBruto,
-          altura: variacao.value.altura,
-          largura: variacao.value.largura,
-          profundidade: variacao.value.profundidade,
+
           ficha_tecnica_url:
             variacao.value.fichaTecnica.length > 0
               ? JSON.stringify(variacao.value.fichaTecnica)
@@ -315,8 +255,6 @@ export default {
         descontoVista: 0,
         garantia: null,
         estoque: null,
-        pesoLiquido: '',
-        pesoBruto: '',
         altura: '',
         largura: '',
         profundidade: '',

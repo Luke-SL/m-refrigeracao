@@ -28,10 +28,17 @@
             />
             <q-btn
               :class="$q.screen.lt.lg ? '' : 'full-width'"
-              color="accent"
+              color="secondary"
               label="Cadastrar Categoria"
               @click="currentForm = 'categoria'"
               :outline="currentForm !== 'categoria'"
+            />
+            <q-btn
+              :class="$q.screen.lt.lg ? '' : 'full-width'"
+              color="secondary"
+              label="Cadastrar Subcategoria"
+              @click="currentForm = 'subcategoria'"
+              :outline="currentForm !== 'subcategoria'"
             />
           </div>
         </div>
@@ -42,10 +49,17 @@
 
           <FormCategoria v-if="currentForm === 'categoria'" @success="handleSuccess" />
 
+          <FormSubcategoria
+            v-if="currentForm === 'subcategoria'"
+            :categorias="categorias"
+            @success="handleSuccess"
+          />
+
           <FormProduto
             v-if="currentForm === 'produto'"
             :marcas="marcas"
             :categorias="categorias"
+            :subcategorias="subcategorias"
             @success="handleSuccess"
           />
 
@@ -68,6 +82,7 @@ import FormMarca from 'src/components/forms/team/FormMarca.vue'
 import FormCategoria from 'src/components/forms/team/FormCategoria.vue'
 import FormProduto from 'src/components/forms/team/FormProduto.vue'
 import FormVariacao from 'src/components/forms/team/FormVariacao.vue'
+import FormSubcategoria from 'src/components/forms/team/FormSubcategoria.vue'
 
 export default {
   name: 'CadastroProdutos',
@@ -76,13 +91,15 @@ export default {
     FormCategoria,
     FormProduto,
     FormVariacao,
+    FormSubcategoria,
   },
   setup() {
     const currentForm = ref('produto')
-    const { getMarcas, getCategorias, getProdutos, getProductImages } = useApi()
+    const { getMarcas, getCategorias, getProdutos, getProductImages, getSubcategorias } = useApi()
 
     const marcas = ref([])
     const categorias = ref([])
+    const subcategorias = ref([])
     const produtos = ref([])
 
     const loadSelects = async () => {
@@ -92,6 +109,9 @@ export default {
 
         const categoriasData = await getCategorias()
         categorias.value = categoriasData
+
+        const subcategoriaData = await getSubcategorias()
+        subcategorias.value = subcategoriaData
 
         const produtosData = await getProdutos()
         produtos.value = await Promise.all(
@@ -126,6 +146,7 @@ export default {
       currentForm,
       marcas,
       categorias,
+      subcategorias,
       produtos,
       handleSuccess,
     }

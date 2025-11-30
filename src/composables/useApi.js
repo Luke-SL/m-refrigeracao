@@ -11,6 +11,7 @@ export default function useApi() {
   const { user } = useAuthUser()
   const table_marca = 'marca'
   const table_categoria = 'categoria'
+  const table_subcategoria = 'subcategoria'
   const table_produto = 'produto'
   const table_produto_variacao = 'produto_variacao'
 
@@ -50,6 +51,25 @@ export default function useApi() {
     return data
   }
 
+  // Adição e busca de subcategorias
+  const addSubcategoria = async (form) => {
+    const { data, error } = await supabase.from(table_subcategoria).insert([
+      {
+        nome: form.nome,
+        categoria_id: form.categoria.id,
+        usuario_id: user.value.id,
+      },
+    ])
+    if (error) throw error
+    return data
+  }
+
+  const getSubcategorias = async () => {
+    const { data, error } = await supabase.from(table_subcategoria).select('*')
+    if (error) throw error
+    return data
+  }
+
   // Adicionar e buscar produtos
   const addProduto = async (form) => {
     const { data, error } = await supabase
@@ -59,9 +79,16 @@ export default function useApi() {
           nome: form.nome,
           descricao: form.descricao,
           categoria_id: form.categoria_id,
+          subcategoria_id: form.subcategoria_id,
           marca_id: form.marca_id,
           usuario_id: user.value.id,
           path_imagens: form.path_imagens,
+
+          peso_liquido: form.peso_liquido,
+          peso_bruto: form.peso_bruto,
+          altura: form.altura,
+          largura: form.largura,
+          profundidade: form.profundidade,
         },
       ])
       .select('id')
@@ -382,6 +409,8 @@ export default function useApi() {
     getMarcas,
     addCategoria,
     getCategorias,
+    addSubcategoria,
+    getSubcategorias,
     addProduto,
     getProdutos,
     addProdutoVariacao,

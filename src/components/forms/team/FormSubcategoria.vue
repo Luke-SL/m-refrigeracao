@@ -1,13 +1,22 @@
 <template>
   <q-card class="q-pa-md">
     <q-card-section>
-      <div class="text-h6">Cadastrar Categoria</div>
+      <div class="text-h6">Cadastrar Subcategoria</div>
     </q-card-section>
     <q-card-section>
       <q-form @submit="confirmSave" class="q-gutter-md">
+        <q-select
+          v-model="subcategoria.categoria"
+          :options="categorias"
+          label="Categoria *"
+          outlined
+          option-label="nome"
+          option-value="id"
+          :rules="[(val) => !!val || 'Campo obrigatório']"
+        />
         <q-input
-          v-model="categoria.nome"
-          label="Nome *"
+          v-model="subcategoria.nome"
+          label="Nome da subcategoria *"
           outlined
           :rules="[(val) => !!val || 'Campo obrigatório']"
         />
@@ -30,10 +39,11 @@
 
         <q-card-section class="q-pt-none text-center">
           <p class="text-body1 q-mb-sm">
-            Tem certeza que deseja cadastrar a categoria "{{ categoria.nome }}"?
+            Tem certeza que deseja cadastrar a subcategoria "{{ subcategoria.nome }}" para a
+            categoria "{{ subcategoria.categoria.nome }}"?
           </p>
           <p class="text-body2 text-grey-7">
-            Esta ação irá adicionar uma nova categoria ao sistema.
+            Esta ação irá adicionar uma nova subcategoria ao sistema.
           </p>
         </q-card-section>
 
@@ -66,14 +76,21 @@ import { positiveNotify, negativeNotify } from 'src/composables/UseNotify'
 import { validarMarcaCategoria } from 'src/utils/validations/validorMarcaCategoria.js'
 
 export default {
-  name: 'FormCategoria',
+  name: 'FormSubcategoria',
+  props: {
+    categorias: {
+      type: Array,
+      default: () => [],
+    },
+  },
   emits: ['success'],
   setup(props, { emit }) {
-    const { addCategoria } = useApi()
+    const { addSubcategoria } = useApi()
     const loading = ref(false)
     const confirmDialog = ref(false)
 
-    const categoria = ref({
+    const subcategoria = ref({
+      categoria: null,
       nome: '',
     })
 
@@ -83,31 +100,56 @@ export default {
 
     const save = async () => {
       loading.value = true
+
       try {
-        const validacao = await validarMarcaCategoria(categoria.value)
+        const validacao = await validarMarcaCategoria(subcategoria.value)
 
         if (!validacao.isValid) {
           loading.value = false
           throw negativeNotify(validacao.message)
         }
 
-        await addCategoria(validacao.form)
-        positiveNotify(`Categoria ${validacao.form.nome} cadastrada com sucesso!`)
+        await addSubcategoria(subcategoria.value)
+        positiveNotify(
+          `Subcategoria ${subcategoria.value.nome} cadastrada para a categoria ${subcategoria.value.categoria.nome} com sucesso!`,
+        )
+        reset()
+        confirmDialog.value = false
+        emit('success')
+      } catch (error) {
+        negativeNotify(error.message || 'Erro ao cadastrar categoria.')
+      } finally {
+        loading.value = false
+      }
+
+      /*try {
+        const validacao = await validarMarcaCategoria(subcategoria.value)
+
+        if (!validacao.isValid) {
+          loading.value = false
+          throw negativeNotify(validacao.message)
+        }
+
+        await addSubcategoria(validacao.form)
+        positiveNotify(
+          `Subcategoria ${validacao.form.nome} cadastrada para a categoria ${subcategoria.value.categoria.nome} com sucesso!`,
+        )
         reset()
         confirmDialog.value = false
         emit('success')
       } catch (error) {
         negativeNotify(error.message || 'Erro ao cadastrar categoria.')
       }
-      loading.value = false
+      loading.value = false*/
+      // positiveNotify('Funcionalidade desativada temporariamente.')
     }
 
     const reset = () => {
-      categoria.value = { nome: '' }
+      subcategoria.value = { nome: '' }
     }
 
     return {
-      categoria,
+      subcategoria,
       loading,
       confirmDialog,
       confirmSave,
