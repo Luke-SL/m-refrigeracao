@@ -84,11 +84,35 @@ export default function useApi() {
           usuario_id: user.value.id,
           path_imagens: form.path_imagens,
 
-          peso_liquido: form.peso_liquido,
-          peso_bruto: form.peso_bruto,
-          altura: form.altura,
-          largura: form.largura,
-          profundidade: form.profundidade,
+          // Campos para Ventilador
+          peso_liquido_kg: form.peso_liquido_kg,
+          peso_bruto_kg: form.peso_bruto_kg,
+          largura_cm: form.largura_cm,
+          altura_cm: form.altura_cm,
+          profundidade_cm: form.profundidade_cm,
+          largura_embalado_cm: form.largura_embalado_cm,
+          altura_embalado_cm: form.altura_embalado_cm,
+          profundidade_embalado_cm: form.profundidade_embalado_cm,
+
+          // Campos para Ar-condicionado - Unidade Interna
+          peso_liquido_interno_kg: form.peso_liquido_interno_kg,
+          peso_bruto_interno_kg: form.peso_bruto_interno_kg,
+          largura_interno_cm: form.largura_interno_cm,
+          altura_interno_cm: form.altura_interno_cm,
+          profundidade_interno_cm: form.profundidade_interno_cm,
+          largura_interno_embalado_cm: form.largura_interno_embalado_cm,
+          altura_interno_embalado_cm: form.altura_interno_embalado_cm,
+          profundidade_interno_embalado_cm: form.profundidade_interno_embalado_cm,
+
+          // Campos para Ar-condicionado - Unidade Externa
+          peso_liquido_externo_kg: form.peso_liquido_externo_kg,
+          peso_bruto_externo_kg: form.peso_bruto_externo_kg,
+          largura_externo_cm: form.largura_externo_cm,
+          altura_externo_cm: form.altura_externo_cm,
+          profundidade_externo_cm: form.profundidade_externo_cm,
+          largura_externo_embalado_cm: form.largura_externo_embalado_cm,
+          altura_externo_embalado_cm: form.altura_externo_embalado_cm,
+          profundidade_externo_embalado_cm: form.profundidade_externo_embalado_cm,
         },
       ])
       .select('id')

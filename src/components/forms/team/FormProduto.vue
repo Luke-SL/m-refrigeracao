@@ -70,7 +70,7 @@
 
         <!-- Dimensões e Peso para Ventilador -->
         <div v-if="!isArCondicionado">
-          <div class="text-h6 q-mt-md q-mb-sm">Dimensões e Peso</div>
+          <div class="text-h6 q-mt-md q-mb-sm">Peso</div>
           <div class="row q-col-gutter-md">
             <div class="col-12 col-md-6">
               <q-input
@@ -92,22 +92,23 @@
             </div>
           </div>
 
+          <div class="text-h6 q-mt-md q-mb-sm">Dimensões do Produto</div>
           <div class="row q-col-gutter-md">
-            <div class="col-12 col-md-4">
-              <q-input
-                v-model="produto.altura_cm"
-                label="Altura (cm) *"
-                outlined
-                @update:model-value="(val) => (produto.altura_cm = normalizeDecimal(val))"
-                :rules="[(val) => !!val || 'Campo obrigatório']"
-              />
-            </div>
             <div class="col-12 col-md-4">
               <q-input
                 v-model="produto.largura_cm"
                 label="Largura (cm) *"
                 outlined
                 @update:model-value="(val) => (produto.largura_cm = normalizeDecimal(val))"
+                :rules="[(val) => !!val || 'Campo obrigatório']"
+              />
+            </div>
+            <div class="col-12 col-md-4">
+              <q-input
+                v-model="produto.altura_cm"
+                label="Altura (cm) *"
+                outlined
+                @update:model-value="(val) => (produto.altura_cm = normalizeDecimal(val))"
                 :rules="[(val) => !!val || 'Campo obrigatório']"
               />
             </div>
@@ -121,11 +122,44 @@
               />
             </div>
           </div>
+
+          <div class="text-h6 q-mt-md q-mb-sm">Dimensões Embalado (para frete)</div>
+          <div class="row q-col-gutter-md">
+            <div class="col-12 col-md-4">
+              <q-input
+                v-model="produto.largura_embalado_cm"
+                label="Largura (cm) *"
+                outlined
+                @update:model-value="(val) => (produto.largura_embalado_cm = normalizeDecimal(val))"
+                :rules="[(val) => !!val || 'Campo obrigatório']"
+              />
+            </div>
+            <div class="col-12 col-md-4">
+              <q-input
+                v-model="produto.altura_embalado_cm"
+                label="Altura (cm) *"
+                outlined
+                @update:model-value="(val) => (produto.altura_embalado_cm = normalizeDecimal(val))"
+                :rules="[(val) => !!val || 'Campo obrigatório']"
+              />
+            </div>
+            <div class="col-12 col-md-4">
+              <q-input
+                v-model="produto.profundidade_embalado_cm"
+                label="Profundidade (cm) *"
+                outlined
+                @update:model-value="
+                  (val) => (produto.profundidade_embalado_cm = normalizeDecimal(val))
+                "
+                :rules="[(val) => !!val || 'Campo obrigatório']"
+              />
+            </div>
+          </div>
         </div>
 
         <!-- Dimensões e Peso para Ar-condicionado -->
         <div v-else>
-          <div class="text-h6 q-mt-md q-mb-sm">Dimensões e Peso - Unidade Interna</div>
+          <div class="text-h6 q-mt-md q-mb-sm">Unidade Interna - Peso</div>
           <div class="row q-col-gutter-md">
             <div class="col-12 col-md-6">
               <q-input
@@ -151,16 +185,8 @@
             </div>
           </div>
 
+          <div class="text-subtitle1 q-mt-md q-mb-sm">Dimensões do Produto</div>
           <div class="row q-col-gutter-md">
-            <div class="col-12 col-md-4">
-              <q-input
-                v-model="produto.altura_interno_cm"
-                label="Altura (cm) *"
-                outlined
-                @update:model-value="(val) => (produto.altura_interno_cm = normalizeDecimal(val))"
-                :rules="[(val) => !!val || 'Campo obrigatório']"
-              />
-            </div>
             <div class="col-12 col-md-4">
               <q-input
                 v-model="produto.largura_interno_cm"
@@ -172,11 +198,57 @@
             </div>
             <div class="col-12 col-md-4">
               <q-input
+                v-model="produto.altura_interno_cm"
+                label="Altura (cm) *"
+                outlined
+                @update:model-value="(val) => (produto.altura_interno_cm = normalizeDecimal(val))"
+                :rules="[(val) => !!val || 'Campo obrigatório']"
+              />
+            </div>
+            <div class="col-12 col-md-4">
+              <q-input
                 v-model="produto.profundidade_interno_cm"
                 label="Profundidade (cm) *"
                 outlined
                 @update:model-value="
                   (val) => (produto.profundidade_interno_cm = normalizeDecimal(val))
+                "
+                :rules="[(val) => !!val || 'Campo obrigatório']"
+              />
+            </div>
+          </div>
+
+          <div class="text-subtitle1 q-mt-md q-mb-sm">Dimensões Embalado (para frete)</div>
+          <div class="row q-col-gutter-md">
+            <div class="col-12 col-md-4">
+              <q-input
+                v-model="produto.largura_interno_embalado_cm"
+                label="Largura (cm) *"
+                outlined
+                @update:model-value="
+                  (val) => (produto.largura_interno_embalado_cm = normalizeDecimal(val))
+                "
+                :rules="[(val) => !!val || 'Campo obrigatório']"
+              />
+            </div>
+            <div class="col-12 col-md-4">
+              <q-input
+                v-model="produto.altura_interno_embalado_cm"
+                label="Altura (cm) *"
+                outlined
+                @update:model-value="
+                  (val) => (produto.altura_interno_embalado_cm = normalizeDecimal(val))
+                "
+                :rules="[(val) => !!val || 'Campo obrigatório']"
+              />
+            </div>
+            <div class="col-12 col-md-4">
+              <q-input
+                v-model="produto.profundidade_interno_embalado_cm"
+                label="Profundidade (cm) *"
+                outlined
+                @update:model-value="
+                  (val) => (produto.profundidade_interno_embalado_cm = normalizeDecimal(val))
                 "
                 :rules="[(val) => !!val || 'Campo obrigatório']"
               />
@@ -198,7 +270,7 @@
 
           <!-- Dimensões e Peso - Unidade Externa -->
           <div v-if="temUnidadeExterna">
-            <div class="text-h6 q-mt-md q-mb-sm">Dimensões e Peso - Unidade Externa</div>
+            <div class="text-h6 q-mt-md q-mb-sm">Unidade Externa - Peso</div>
             <div class="row q-col-gutter-md">
               <div class="col-12 col-md-6">
                 <q-input
@@ -224,16 +296,8 @@
               </div>
             </div>
 
+            <div class="text-subtitle1 q-mt-md q-mb-sm">Dimensões do Produto</div>
             <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-4">
-                <q-input
-                  v-model="produto.altura_externo_cm"
-                  label="Altura (cm) *"
-                  outlined
-                  @update:model-value="(val) => (produto.altura_externo_cm = normalizeDecimal(val))"
-                  :rules="[(val) => !!val || 'Campo obrigatório']"
-                />
-              </div>
               <div class="col-12 col-md-4">
                 <q-input
                   v-model="produto.largura_externo_cm"
@@ -247,11 +311,57 @@
               </div>
               <div class="col-12 col-md-4">
                 <q-input
+                  v-model="produto.altura_externo_cm"
+                  label="Altura (cm) *"
+                  outlined
+                  @update:model-value="(val) => (produto.altura_externo_cm = normalizeDecimal(val))"
+                  :rules="[(val) => !!val || 'Campo obrigatório']"
+                />
+              </div>
+              <div class="col-12 col-md-4">
+                <q-input
                   v-model="produto.profundidade_externo_cm"
                   label="Profundidade (cm) *"
                   outlined
                   @update:model-value="
                     (val) => (produto.profundidade_externo_cm = normalizeDecimal(val))
+                  "
+                  :rules="[(val) => !!val || 'Campo obrigatório']"
+                />
+              </div>
+            </div>
+
+            <div class="text-subtitle1 q-mt-md q-mb-sm">Dimensões Embalado (para frete)</div>
+            <div class="row q-col-gutter-md">
+              <div class="col-12 col-md-4">
+                <q-input
+                  v-model="produto.largura_externo_embalado_cm"
+                  label="Largura (cm) *"
+                  outlined
+                  @update:model-value="
+                    (val) => (produto.largura_externo_embalado_cm = normalizeDecimal(val))
+                  "
+                  :rules="[(val) => !!val || 'Campo obrigatório']"
+                />
+              </div>
+              <div class="col-12 col-md-4">
+                <q-input
+                  v-model="produto.altura_externo_embalado_cm"
+                  label="Altura (cm) *"
+                  outlined
+                  @update:model-value="
+                    (val) => (produto.altura_externo_embalado_cm = normalizeDecimal(val))
+                  "
+                  :rules="[(val) => !!val || 'Campo obrigatório']"
+                />
+              </div>
+              <div class="col-12 col-md-4">
+                <q-input
+                  v-model="produto.profundidade_externo_embalado_cm"
+                  label="Profundidade (cm) *"
+                  outlined
+                  @update:model-value="
+                    (val) => (produto.profundidade_externo_embalado_cm = normalizeDecimal(val))
                   "
                   :rules="[(val) => !!val || 'Campo obrigatório']"
                 />
@@ -368,23 +478,32 @@ export default {
       // Campos para Ventilador
       peso_liquido_kg: null,
       peso_bruto_kg: null,
-      altura_cm: null,
       largura_cm: null,
+      altura_cm: null,
       profundidade_cm: null,
+      largura_embalado_cm: null,
+      altura_embalado_cm: null,
+      profundidade_embalado_cm: null,
 
       // Campos para Ar-condicionado - Unidade Interna
       peso_liquido_interno_kg: null,
       peso_bruto_interno_kg: null,
-      altura_interno_cm: null,
       largura_interno_cm: null,
+      altura_interno_cm: null,
       profundidade_interno_cm: null,
+      largura_interno_embalado_cm: null,
+      altura_interno_embalado_cm: null,
+      profundidade_interno_embalado_cm: null,
 
       // Campos para Ar-condicionado - Unidade Externa
       peso_liquido_externo_kg: null,
       peso_bruto_externo_kg: null,
-      altura_externo_cm: null,
       largura_externo_cm: null,
+      altura_externo_cm: null,
       profundidade_externo_cm: null,
+      largura_externo_embalado_cm: null,
+      altura_externo_embalado_cm: null,
+      profundidade_externo_embalado_cm: null,
     })
 
     // Detecta automaticamente se é ar-condicionado pela categoria
@@ -440,21 +559,30 @@ export default {
         // Mudou para ar-condicionado, limpa campos de ventilador
         produto.value.peso_liquido_kg = null
         produto.value.peso_bruto_kg = null
-        produto.value.altura_cm = null
         produto.value.largura_cm = null
+        produto.value.altura_cm = null
         produto.value.profundidade_cm = null
+        produto.value.largura_embalado_cm = null
+        produto.value.altura_embalado_cm = null
+        produto.value.profundidade_embalado_cm = null
       } else {
         // Mudou para ventilador, limpa campos de ar-condicionado
         produto.value.peso_liquido_interno_kg = null
         produto.value.peso_bruto_interno_kg = null
-        produto.value.altura_interno_cm = null
         produto.value.largura_interno_cm = null
+        produto.value.altura_interno_cm = null
         produto.value.profundidade_interno_cm = null
+        produto.value.largura_interno_embalado_cm = null
+        produto.value.altura_interno_embalado_cm = null
+        produto.value.profundidade_interno_embalado_cm = null
         produto.value.peso_liquido_externo_kg = null
         produto.value.peso_bruto_externo_kg = null
-        produto.value.altura_externo_cm = null
         produto.value.largura_externo_cm = null
+        produto.value.altura_externo_cm = null
         produto.value.profundidade_externo_cm = null
+        produto.value.largura_externo_embalado_cm = null
+        produto.value.altura_externo_embalado_cm = null
+        produto.value.profundidade_externo_embalado_cm = null
         temUnidadeExterna.value = false
         autoDetectadoExterna.value = false
       }
@@ -468,9 +596,12 @@ export default {
         // Limpa campos da unidade externa
         produto.value.peso_liquido_externo_kg = null
         produto.value.peso_bruto_externo_kg = null
-        produto.value.altura_externo_cm = null
         produto.value.largura_externo_cm = null
+        produto.value.altura_externo_cm = null
         produto.value.profundidade_externo_cm = null
+        produto.value.largura_externo_embalado_cm = null
+        produto.value.altura_externo_embalado_cm = null
+        produto.value.profundidade_externo_embalado_cm = null
       }
     }
 
@@ -541,23 +672,32 @@ export default {
           // Campos de ventilador
           peso_liquido_kg: produto.value.peso_liquido_kg,
           peso_bruto_kg: produto.value.peso_bruto_kg,
-          altura_cm: produto.value.altura_cm,
           largura_cm: produto.value.largura_cm,
+          altura_cm: produto.value.altura_cm,
           profundidade_cm: produto.value.profundidade_cm,
+          largura_embalado_cm: produto.value.largura_embalado_cm,
+          altura_embalado_cm: produto.value.altura_embalado_cm,
+          profundidade_embalado_cm: produto.value.profundidade_embalado_cm,
 
           // Campos de ar-condicionado - interno
           peso_liquido_interno_kg: produto.value.peso_liquido_interno_kg,
           peso_bruto_interno_kg: produto.value.peso_bruto_interno_kg,
-          altura_interno_cm: produto.value.altura_interno_cm,
           largura_interno_cm: produto.value.largura_interno_cm,
+          altura_interno_cm: produto.value.altura_interno_cm,
           profundidade_interno_cm: produto.value.profundidade_interno_cm,
+          largura_interno_embalado_cm: produto.value.largura_interno_embalado_cm,
+          altura_interno_embalado_cm: produto.value.altura_interno_embalado_cm,
+          profundidade_interno_embalado_cm: produto.value.profundidade_interno_embalado_cm,
 
           // Campos de ar-condicionado - externo
           peso_liquido_externo_kg: produto.value.peso_liquido_externo_kg,
           peso_bruto_externo_kg: produto.value.peso_bruto_externo_kg,
-          altura_externo_cm: produto.value.altura_externo_cm,
           largura_externo_cm: produto.value.largura_externo_cm,
+          altura_externo_cm: produto.value.altura_externo_cm,
           profundidade_externo_cm: produto.value.profundidade_externo_cm,
+          largura_externo_embalado_cm: produto.value.largura_externo_embalado_cm,
+          altura_externo_embalado_cm: produto.value.altura_externo_embalado_cm,
+          profundidade_externo_embalado_cm: produto.value.profundidade_externo_embalado_cm,
         }
 
         const { error } = await addProduto(novoProduto)
@@ -566,7 +706,9 @@ export default {
           throw new Error(error.message)
         }
 
-        positiveNotify(`Produto "${produto.value.nome}" cadastrado com sucesso!`)
+        positiveNotify(
+          `Produto "${produto.value.categoria} ${produto.value.subcategoria} ${produto.value.nome}" cadastrado com sucesso!`,
+        )
         reset()
         emit('success')
       } catch (err) {
@@ -587,21 +729,30 @@ export default {
 
         peso_liquido_kg: null,
         peso_bruto_kg: null,
-        altura_cm: null,
         largura_cm: null,
+        altura_cm: null,
         profundidade_cm: null,
+        largura_embalado_cm: null,
+        altura_embalado_cm: null,
+        profundidade_embalado_cm: null,
 
         peso_liquido_interno_kg: null,
         peso_bruto_interno_kg: null,
-        altura_interno_cm: null,
         largura_interno_cm: null,
+        altura_interno_cm: null,
         profundidade_interno_cm: null,
+        largura_interno_embalado_cm: null,
+        altura_interno_embalado_cm: null,
+        profundidade_interno_embalado_cm: null,
 
         peso_liquido_externo_kg: null,
         peso_bruto_externo_kg: null,
-        altura_externo_cm: null,
         largura_externo_cm: null,
+        altura_externo_cm: null,
         profundidade_externo_cm: null,
+        largura_externo_embalado_cm: null,
+        altura_externo_embalado_cm: null,
+        profundidade_externo_embalado_cm: null,
       }
       isArCondicionado.value = false
       temUnidadeExterna.value = false
