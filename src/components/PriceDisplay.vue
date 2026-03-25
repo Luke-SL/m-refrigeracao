@@ -12,10 +12,12 @@
         {{ formatCurrency(precoComDesconto) }}
       </div>
       <div>
-        <p class="text-green-8 text-weight-medium">À vista no pix ou no cartão</p>
+        <p class="text-green-8 text-weight-medium">À vista no PIX</p>
         <p class="text-body2">
-          ou <strong>{{ quota }}x de {{ formatCurrency(parcelaComDesconto) }}</strong> sem juros
+          <!-- ✅ CORRIGIDO - parcela no preço ORIGINAL (sem desconto) -->
+          ou <strong>{{ quota }}x de {{ formatCurrency(parcela) }}</strong> sem juros no cartão
         </p>
+        <p class="text-caption text-grey-7">Desconto válido apenas para pagamento à vista no PIX</p>
         <p>
           <a href="#" @click.prevent="$emit('show-payment')" class="text-primary">
             Ver formas de pagamento
@@ -30,7 +32,7 @@
         {{ formatCurrency(price) }}
       </div>
       <div>
-        <p class="text-green-8 text-weight-medium">À vista no pix ou no cartão</p>
+        <p class="text-green-8 text-weight-medium">À vista no PIX ou no cartão</p>
         <p class="text-body2">
           ou <strong>{{ quota }}x de {{ formatCurrency(parcela) }}</strong> sem juros
         </p>
@@ -65,14 +67,12 @@ const props = defineProps({
 
 defineEmits(['show-payment'])
 
+// Preço COM desconto (PIX à vista)
 const precoComDesconto = computed(() => {
   return props.price - (props.price * props.discount) / 100
 })
 
-const parcelaComDesconto = computed(() => {
-  return precoComDesconto.value / props.quota
-})
-
+// ✅ CORRIGIDO - Parcela SEMPRE no preço ORIGINAL (sem desconto)
 const parcela = computed(() => {
   return props.price / props.quota
 })

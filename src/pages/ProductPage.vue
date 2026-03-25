@@ -140,14 +140,16 @@
               <div class="text-h6 text-primary q-mb-md">Formas de Pagamento</div>
               <q-markup-table flat>
                 <tbody>
+                  <!-- À vista no PIX com desconto -->
                   <tr>
                     <td class="text-weight-medium">À vista no PIX</td>
                     <td class="text-green-8 text-bold">
-                      {{ formatCurrency(precoFinal) }}
-                      <span v-if="product.discount"> ({{ product.discount }}% OFF)</span>
+                      {{ formatCurrency(precoAVista) }}
+                      <span v-if="product.discount > 0"> ({{ product.discount }}% OFF)</span>
                     </td>
                   </tr>
 
+                  <!-- Parcelamento sem juros no preço ORIGINAL -->
                   <tr v-for="i in product.quota" :key="i">
                     <td class="text-weight-medium">{{ i }}x sem juros</td>
                     <td>{{ formatCurrency(product.price / i) }}</td>
@@ -192,22 +194,26 @@ const loading = ref(true)
 const paymentDialog = ref(false)
 const freteSelecionado = ref(null)
 
-// Zoom
+// Zoom refs
 const zoomContainer = ref(null)
 const zoomImage = ref(null)
 const isZooming = ref(false)
 const ZOOM_LEVEL = 2.5
 const TRANSITION_SPEED = '0.1s'
 
-// Preço final com desconto
-const precoFinal = computed(() => {
+// Preço à vista (COM desconto) - usado no dialog
+const precoAVista = computed(() => {
   if (!product.value) return 0
-  return product.value.discount
-    ? product.value.price - (product.value.price * product.value.discount) / 100
-    : product.value.price
+
+  const preco = Number(product.value.price) || 0
+  const desconto = Number(product.value.discount) || 0
+
+  if (!desconto) return preco
+
+  return preco - (preco * desconto) / 100
 })
 
-// Ficha técnica dinâmica
+// Ficha técnica
 const productSpecs = computed(() => {
   if (!product.value) return []
   return [
@@ -216,21 +222,7 @@ const productSpecs = computed(() => {
     { label: 'Voltagem', value: product.value.voltagem || '—' },
     { label: 'Tipo', value: product.value.tipo || '—' },
     { label: 'BTUs', value: product.value.btus || '—' },
-    { label: 'Garantia', value: product.value.garantia || '—' },
-    {
-      label: 'Peso Líquido',
-      value: product.value.peso_liquido ? product.value.peso_liquido + ' kg' : '—',
-    },
-    {
-      label: 'Peso Bruto',
-      value: product.value.peso_bruto ? product.value.peso_bruto + ' kg' : '—',
-    },
-    { label: 'Largura', value: product.value.largura ? product.value.largura + ' cm' : '—' },
-    { label: 'Altura', value: product.value.altura ? product.value.altura + ' cm' : '—' },
-    {
-      label: 'Profundidade',
-      value: product.value.profundidade ? product.value.profundidade + ' cm' : '—',
-    },
+    { label: 'Garantia', value: product.value.garantia ? `${product.value.garantia} meses` : '—' },
   ]
 })
 
@@ -251,17 +243,14 @@ const loadProduct = async () => {
 
 const buyProduct = () => {
   let mensagem = 'Produto adicionado ao carrinho!'
-
   if (freteSelecionado.value) {
     mensagem += ` Frete: ${freteSelecionado.value.nome} - ${formatCurrency(freteSelecionado.value.valor)}`
   }
-
   positiveNotify(mensagem)
 }
 
 const onFreteSelecionado = (frete) => {
   freteSelecionado.value = frete
-  console.log('Frete selecionado:', frete)
 }
 
 // Zoom handlers

@@ -17,7 +17,7 @@
             flat
             bordered
             class="q-pa-sm relative desktop-card cursor-pointer"
-            @click="$emit('product-click', props.row)"
+            @click="handleClick(props.row)"
           >
             <q-img :src="props.row.imagePath" class="img-size" fit="contain" />
             <q-card-section class="card-content">
@@ -25,8 +25,8 @@
                 <p class="text-bold text-body1">{{ truncate(props.row.productName) }}</p>
               </div>
 
-              <!-- Preço com desconto -->
-              <div v-if="props.row.discount">
+              <!-- ✅ CORRIGIDO - verifica se discount > 0 -->
+              <div v-if="temDesconto(props.row)">
                 <div class="price-container">
                   <div class="text-body1 price-content">
                     <span class="regular-price">
@@ -39,7 +39,7 @@
                     <br />
                     <span class="text-bold text-h6 discounted-price">
                       {{ calcularPrecoComDesconto(props.row) }}
-                      <span class="text-caption">À vista</span>
+                      <span class="text-caption">no PIX</span>
                     </span>
                     <br />
                     <span class="text-overline">{{ props.row.discount }}% de desconto</span>
@@ -52,6 +52,7 @@
               <div v-else>
                 <div class="price-container">
                   <div class="text-body1 price-content">
+                    <!-- ✅ REMOVIDO O "+" -->
                     <span class="text-bold text-h6 discounted-price">
                       {{ formatCurrency(props.row.price) }}
                       <span class="text-caption">À vista</span>
@@ -139,19 +140,57 @@ export default {
     },
   },
   emits: ['product-click'],
-  setup() {
+  setup(props, { emit }) {
     const columns = [{ name: 'productName', label: 'Produto', field: 'productName' }]
 
+    // ✅ Função para verificar se tem desconto válido
+    const temDesconto = (produto) => {
+      const discount = Number(produto.discount) || 0
+      console.log('🔍 Verificando desconto:', {
+        produto: produto.productName,
+        discount_raw: produto.discount,
+        discount_number: discount,
+        tem_desconto: discount > 0,
+      })
+      return discount > 0
+    }
+
     const calcularPrecoComDesconto = (produto) => {
-      const precoComDesconto = produto.price - produto.price * (produto.discount / 100)
+      const price = Number(produto.price) || 0
+      const discount = Number(produto.discount) || 0
+      const precoComDesconto = price - (price * discount) / 100
+
+      console.log('💰 Calculando desconto:', {
+        produto: produto.productName,
+        price: price,
+        discount: discount,
+        resultado: precoComDesconto,
+        formatado: formatCurrency(precoComDesconto),
+      })
+
       return formatCurrency(precoComDesconto)
+    }
+
+    const handleClick = (produto) => {
+      console.log('🖱️ Clicou no produto:', {
+        nome: produto.productName,
+        price: produto.price,
+        discount: produto.discount,
+        tipos: {
+          price: typeof produto.price,
+          discount: typeof produto.discount,
+        },
+      })
+      emit('product-click', produto)
     }
 
     return {
       columns,
       formatCurrency,
       truncate,
+      temDesconto,
       calcularPrecoComDesconto,
+      handleClick,
     }
   },
 }

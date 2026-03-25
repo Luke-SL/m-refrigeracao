@@ -1,3 +1,4 @@
+// src/boot/supabase.js
 import { createClient } from '@supabase/supabase-js'
 import useAuthUser from 'src/composables/UseAuthUser'
 
